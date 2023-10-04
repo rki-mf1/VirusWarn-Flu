@@ -27,9 +27,11 @@ aminoacids = [
     "W",
     "Y",
 ]
+
 GAP_CHAR = "-"
 AASTOP = "*"
 codons_stop = ["TAG", "TGA", "TAA"]
+
 CODONDICT = dict(
     A=["GCT", "GCC", "GCA", "GCG"],
     C=["TGT", "TGC"],
@@ -154,7 +156,7 @@ L_GENES_ROI = [
 
 def extend_tuple(t):
     name, nt_start, nt_end, aa_start, aa_end, type, fun = t
-    return [(name, i, type, loc, fun) for i in range(aa_start, aa_end)]
+    return [(name, i, type, fun) for i in range(aa_start, aa_end)]
 
 
 L_GENES_ROI_EXTENDED = [x for t in L_GENES_ROI for x in extend_tuple(t)]
@@ -165,7 +167,7 @@ DF_SPIKE_ROI = pd.DataFrame(
     columns=["gene", "aa_position", "type", "functional domain"],
 )
 
-
+### Load HA from reference file
 HA_PROTEIN = [
     str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa'),'fasta')
 ][1]
@@ -174,6 +176,7 @@ HA_NUCLEOTIDE = [
     str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_nucleotide.fa'),'fasta')
 ][1]
 
+### Load NA from reference file
 NA_PROTEIN = [
     str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa'),'fasta')
 ][0]
