@@ -20,8 +20,8 @@ def aggregateMutationTable(
     sep=";",
 ):
     """
-    Aggregates the information from a table of mutations according to group_cols and merges the
-    informations from infos_cols
+    Aggregates the information from a table of mutations according to group_cols and 
+    merges the informations from infos_cols
     """
     df_aggregated = df_annot.groupby(group_cols).agg(
         ID_list=pd.NamedAgg(
@@ -93,12 +93,15 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "-i", "--input", required=True, help="table of mutations (produced by Vocal)"
+        "-i", 
+        "--input", 
+        required=True, 
+        help="table of mutations (produced by Vocal)"
     )
     parser.add_argument(
         "-a",
         "--annotation",
-        default="table_cov2_mutations_annotation.csv",
+        default="table_h1n1_mutations_annotation.csv",
         help="Table with information about lineage defining mutation and Variants Of Concern",
     )
     parser.add_argument(
@@ -118,13 +121,17 @@ def main():
 
     tab_file = args.input
     annot_file = args.annotation
-
     out_table = args.output
-    # Reading in the files
 
+    # Reading in the files
     df_variants = pd.read_csv(tab_file, sep="\t")
     df_variant_with_annot = annotateVariantTable(df_variants, annot_file).sort_values(
-        ["ID", "aa_pos_ref_start", "variant_type", "type"]
+        [
+            "ID", 
+            "aa_pos_ref_start", 
+            "variant_type", 
+            "type",
+        ]
     )
 
     columns_save = [
@@ -143,7 +150,6 @@ def main():
         df_variant_with_annot.to_csv(out_table, sep="\t", index=False)
     else:
         df_variant_with_annot[columns_save].to_csv(out_table, sep="\t", index=False)
-    ##End
 
 
 if __name__ == "__main__":

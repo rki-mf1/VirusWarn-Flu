@@ -1,5 +1,4 @@
 """
-
 Historical pairwise global aligner using the needleman_wunsch algorithm and
 helper functions for aligning sequences from the BioPython pairwise2 library
 
@@ -13,7 +12,6 @@ from Bio import pairwise2
 """
 
 Historical aligner part
-
 
 """
 
@@ -30,7 +28,6 @@ def initialize_matrix(len1, len2, gap_penalty):
 def needleman_wunsch(string1, string2, matrix, scoring_scheme):
     """
     Fills the DP matrix for NW alignment of string1 to string2
-
     """
     len1 = len(string1)
     len2 = len(string2)
@@ -130,15 +127,9 @@ def Biopairwise_align(
     alignments = pairwise2.align.localms(
         ref_seq, query_seq, match, mismatch, gap_open, gap_extend
     )
+
     al_start, al_end = alignments[0].start, alignments[0].end
     ref_al = alignments[0].seqA[al_start:al_end]
     query_al = alignments[0].seqB[al_start:al_end]
     offset = al_start + 1
     return (offset, ref_al, query_al)
-
-
-"""
-
-Helper function to simply return the alignment of the two sequences
-
-"""

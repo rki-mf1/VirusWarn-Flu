@@ -30,30 +30,48 @@ options(dplyr.summarise.inform = FALSE)
 option_list <- list(
   make_option(
     c("-f", "--file_variant_table"),
-    help = "file corresponding to the variants"
+    help = "file corresponding to the variants",
   ),
   make_option(
     c("-a", "--file_annotations"),
     default = "",
-    help = "file containing metadata on the samples (optional)"
+    help = "file containing metadata on the samples (optional)",
   ),
   make_option(
     c("-v", "--anno_vocal_path"),
     default = file.path(getwd(), "data"),
-    help = "directory path where Vocal database is stored (files concerned: ECDC_assigned_variants.csv and escape_data_bloom_lab.csv and filiation_information) [default %default]"
+    help = "directory path where Vocal database is stored (files concerned: ECDC_assigned_variants.csv and escape_data_bloom_lab.csv and filiation_information) [default %default]",
   ),
-  make_option(c("-o", "--outdir"), default = "results/",
-              help = "Output directory [default %default]"),
-  make_option(c("--id_column"), default = "ID",
-              help = "Column name for the sample ID (this argument will be used if file_annotations is used) [default %default]"),
-  make_option(c("--lineage_column"), default = "LINEAGE",
-              help = "Column name reporting LINEAGE information in the metadata (this argument will be used if file_annotations is used) [default %default]"),
-  make_option(c("--date_column"), default = "SAMPLING_DATE",
-              help = "Column name reporting sampling date information (this argument will be used if file_annotations is used) [default %default]"),
-  make_option(c("--geoloc_column"), default = "PRIMARY_DIAGNOSTIC_LAB_PLZ",
-              help = "Column name for geolocation (this argument will be used if file_annotations is used) [default %default]"),
-  make_option(c("--verbose"), default = FALSE, action = "store_true",
-              help = "Write more output to the console")
+  make_option(
+    c("-o", "--outdir"), 
+    default = "results/",
+    help = "Output directory [default %default]",
+  ),
+  make_option(
+    c("--id_column"), 
+    default = "ID",
+    help = "Column name for the sample ID (this argument will be used if file_annotations is used) [default %default]",
+  ),
+  make_option(
+    c("--lineage_column"), 
+    default = "LINEAGE",
+    help = "Column name reporting LINEAGE information in the metadata (this argument will be used if file_annotations is used) [default %default]",
+  ),
+  make_option(
+    c("--date_column"), 
+    default = "SAMPLING_DATE",
+    help = "Column name reporting sampling date information (this argument will be used if file_annotations is used) [default %default]",
+  ),
+  make_option(
+    c("--geoloc_column"), 
+    default = "PRIMARY_DIAGNOSTIC_LAB_PLZ",
+    help = "Column name for geolocation (this argument will be used if file_annotations is used) [default %default]",
+  ),
+  make_option(
+    c("--verbose"), default = FALSE, 
+    action = "store_true",
+    help = "Write more output to the console",
+  ),
 )
 
 parser = OptionParser(option_list = option_list)
