@@ -1,21 +1,21 @@
-gene	aa mutation	effect	source
-HA	N125D	Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
-HA  N156K   Escape mutant   doi: 10.1371/journal.ppat.1003354
-HA	S185T	Increase severe disease	doi: 10.3390/v11090791
-HA	A186T	UNCLEAR - Increase severe disease	doi: 10.3390/v11090791
-HA	S203T	Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
-HA	I216K	Increase transmission	doi: 10.1007/s00430-013-0291-4
-HA	I216V	UNCLEAR - Increase transmission	doi: 10.1007/s00430-013-0291-4
-HA	D222G	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1093/infdis/jis539 
-HA	D222E	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
-HA	D222N	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
-HA	D222G/N	Increase severe disease	doi: 10.3390/v11090791
-HA	D239N	Association with fatality	doi: 10.1590/S0074-02762011000500014 
-HA	D239G	Increase severe disease	doi: 10.1128/JVI.00936-10 
-HA	Q293H	UNCLEAR - Increase severe disease	doi: 10.1093/infdis/jis539 
-HA	Q310H	Increase severe disease	doi: 10.4161/cc.9.5.10913
-HA	E374K	Vaccination breakthrough	doi: 10.1007/s00430-013-0291-4
-HA	E391K	Increase spread, vaccination failure	doi: 10.1128/JVI.00936-10 
-NA	H275Y	Oseltamivir resistance	doi:10.1371/journal.pone.0016087, doi: 10.1128/JVI.00936-10 
-NA	S286G	Increase severe disease, with co-variation PB1-K480R	doi:10.1371/journal.pone.0016087
-NA	N295S	Alter oseltamivir susceptibility 	doi: 10.1128/JVI.00936-10 
+gene    amino acid  type    ID  comment source
+HA  N125D	MutationOfConcern   ?   Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
+HA  N156K   MutationOfConcern   ?   Escape mutant   doi: 10.1371/journal.ppat.1003354
+HA	S185T	MutationOfConcern   ?   Increase severe disease	doi: 10.3390/v11090791
+HA	A186T	MutationOfConcern   ?   UNCLEAR - Increase severe disease	doi: 10.3390/v11090791
+HA	S203T	MutationOfConcern   ?   Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
+HA	I216K	MutationOfConcern   ?   Increase transmission	doi: 10.1007/s00430-013-0291-4
+HA	I216V	MutationOfConcern   ?   UNCLEAR - Increase transmission	doi: 10.1007/s00430-013-0291-4
+HA	D222G	MutationOfConcern   ?   Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1093/infdis/jis539 
+HA	D222E	MutationOfConcern   ?   UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
+HA	D222N	MutationOfConcern   ?   UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
+HA	D222G/N MutationOfConcern   ?   Increase severe disease	doi: 10.3390/v11090791
+HA	D239N	MutationOfConcern   ?   Association with fatality	doi: 10.1590/S0074-02762011000500014 
+HA	D239G	MutationOfConcern   ?   Increase severe disease	doi: 10.1128/JVI.00936-10 
+HA	Q293H	MutationOfConcern   ?   UNCLEAR - Increase severe disease	doi: 10.1093/infdis/jis539 
+HA	Q310H	MutationOfConcern   ?   Increase severe disease	doi: 10.4161/cc.9.5.10913
+HA	E374K	MutationOfConcern   ?   Vaccination breakthrough	doi: 10.1007/s00430-013-0291-4
+HA	E391K	MutationOfConcern   ?   Increase spread, vaccination failure	doi: 10.1128/JVI.00936-10 
+NA	H275Y	MutationOfConcern   ?   Oseltamivir resistance	doi:10.1371/journal.pone.0016087, doi: 10.1128/JVI.00936-10 
+NA	S286G	MutationOfConcern   ?   Increase severe disease, with co-variation PB1-K480R	doi:10.1371/journal.pone.0016087
+NA	N295S	MutationOfConcern   ?   Alter oseltamivir susceptibility 	doi: 10.1128/JVI.00936-10 
