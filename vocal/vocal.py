@@ -1,5 +1,4 @@
 """
-
 Vocal is a simple Variants of Concern Alert System Script
 
 @hrichard @StefanFrankBio @hoelzer
@@ -8,31 +7,32 @@ Vocal is a simple Variants of Concern Alert System Script
 import argparse
 import time
 
-import aligner
-import AnnotateVariants
 from Bio import pairwise2
 from Bio import SeqIO
+import pandas as pd
+
+import aligner
+import AnnotateVariants
 from data_loader_tmp import D_GENEPOS
 from data_loader_tmp import GAP_CHAR
-from data_loader_tmp import REFSEQ
-from data_loader_tmp import S_PROTEIN
-import pandas as pd
+from data_loader_tmp import HA_NUCLEOTIDE
+from data_loader_tmp import HA_PROTEIN
 import PSL_helper
 
 # Temp constants
-ref_seq_protein = S_PROTEIN
-ref_seq_complete = REFSEQ
-ref_id = "S"
+ref_seq_protein = HA_PROTEIN
+ref_seq_nucleotide = HA_NUCLEOTIDE
+ref_id = "HA"
 # ref_start = 21563
 # ref_end   = 25384
 ref_start, ref_end = D_GENEPOS[ref_id][1:]
-###We fixed an divergence of max 5% with the reference
-###This is a very conservative estimate
-max_percent_shift = 0.05
-## SARS genome is around 30kb
-max_shift_allowed = int(30000 * max_percent_shift)
-QUERY_START_RESTRICTED = ref_start - max_shift_allowed - 1
-QUERY_END_RESTRICTED = ref_end + max_shift_allowed
+### We fixed an divergence of max 5% with the reference
+### This is a very conservative estimate
+#max_percent_shift = 0.05
+### Influenza genome is about 13600 bases long
+#max_shift_allowed = int(13600 * max_percent_shift)
+QUERY_START_RESTRICTED = 1 #ref_start - max_shift_allowed - 1
+QUERY_END_RESTRICTED = 1750 #ref_end + max_shift_allowed
 
 
 def Pairwise_align_query_ref(
@@ -60,7 +60,7 @@ def Pairwise_align_query_ref(
         raise ValueError("Aligner function option not known")
     query_seq_trunc = query_record.seq[align_start_on_ref:align_end_on_ref]
     print(
-        f"Finding Alignment of the Spike protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
+        f"Finding Alignment of the HA protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
     )
     s_time = time.time()
     offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
@@ -76,7 +76,7 @@ def PSL_align_query_ref(
     ref_seq,
     query_record,
     PSL_df,
-    gene_nt_seq=S_PROTEIN,
+    gene_nt_seq=HA_PROTEIN,
     gene_nt_start=ref_start,
     gene_nt_end=ref_end,
     k_size=18,
@@ -99,13 +99,8 @@ def PSL_align_query_ref(
         r_coord_corresp,
         q_coord_corresp,
     ) = PSL_helper.PSLpretty(ref_seq, str(query_record.seq), PSL_row)
-    # if query_record.id == "hCoV-19/Martinique/HCL021028548501/2021|EPI_ISL_1265464|2021-02-02":
-    #     print(query_record.id)
-    #     print(r_coord_corresp)
-    #     print(q_coord_corresp)
-    #     print("\n".join((a+b for a,b in zip(ref_al_complete, query_al_complete))))
 
-    ##We need a converter of positions from the PSLpretty function
+    # We need a converter of positions from the PSLpretty function
     # How many nucleotides to find the beginning / end of the spike?
     ankor_start = gene_nt_seq[:k_size]
     ankor_end = gene_nt_seq[-k_size:]
@@ -223,12 +218,14 @@ def main():
         try:
             if PSL_parse:
                 offset, ref_al, query_al = PSL_align_query_ref(
-                    ref_seq_complete, record, PSL_df
+                    ref_seq_nucleotide, 
+                    record.upper(), 
+                    PSL_df,
                 )
             else:
                 offset, ref_al, query_al = Pairwise_align_query_ref(
-                    ref_seq_protein,
-                    record,
+                    ref_seq_nucleotide,
+                    record.upper(),
                     al_module,
                     args.restrict_start,
                     args.restrict_end,
