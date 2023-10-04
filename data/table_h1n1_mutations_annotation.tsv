@@ -1,6 +1,6 @@
 gene    amino acid  type    ID  comment source
-HA  N125D	MutationOfConcern   NA   Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
-HA  N156K MutationOfConcern   NA   Escape mutant   doi: 10.1371/journal.ppat.1003354
+HA	N125D	MutationOfConcern   NA   Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
+HA	N156K	MutationOfConcern   NA   Escape mutant   doi: 10.1371/journal.ppat.1003354
 HA	S185T	MutationOfConcern   NA   Increase severe disease	doi: 10.3390/v11090791
 HA	A186T	MutationOfConcern   NA   UNCLEAR - Increase severe disease	doi: 10.3390/v11090791
 HA	S203T	MutationOfConcern   NA   Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
