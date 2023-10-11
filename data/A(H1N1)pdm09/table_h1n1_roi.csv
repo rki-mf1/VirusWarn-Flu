@@ -1,0 +1,9 @@
+﻿name;nt_start;nt_end;aa_start;aa_end;type;func
+HA;213;215;71;71;RegionOfInterest;Glycosylation site
+HA;312;314;104;104;RegionOfInterest;Glycosylation site
+HA;426;428;142;142;RegionOfInterest;Glycosylation site
+HA;432;434;144;144;RegionOfInterest;Glycosylation site (variant)
+HA;531;533;177;177;RegionOfInterest;Glycosylation site
+HA;516;518;172;172;RegionOfInterest;Glycosylation site (variant)
+HA;537;539;179;179;RegionOfInterest;Glycosylation site (variant)
+HA;858;860;286;286;RegionOfInterest;Glycosylation site

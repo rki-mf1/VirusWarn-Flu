@@ -1,0 +1,7 @@
+name: psl
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pblat=2.5
