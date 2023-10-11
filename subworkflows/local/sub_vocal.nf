@@ -6,21 +6,23 @@ include { REPORT }      from '../../modules/local/report'
 workflow VOCAL_FLOW {
     take:
         ref_nt
+        ref_aa
         input_fasta
         mutation_table
+        roi_table
 
     main:
         if (params.psl == 'yes' || 'y') {
             PSL ( ref_nt, input_fasta )
-            VOCAL ( 'PSL', input_fasta, PSL.out.output_psl )
+            VOCAL ( 'PSL', input_fasta, ref_nt, ref_aa, PSL.out.output_psl )
         } else if (params.psl == 'no' || 'n') {
-            VOCAL ( '', input_fasta )
+            VOCAL ( '', input_fasta, ref_nt, ref_aa )
         } else {
             exit 1,
             "ERROR: $params.psl is an invalid input for the parameter psl!\n Please choose between yes/y and no/n!\n"
         }
 
-        ANNOTATION ( VOCAL.out.variant_table, mutation_table)
+        ANNOTATION ( VOCAL.out.variant_table, mutation_table, roi_table)
 
         REPORT ( ANNOTATION.out.variants_with_phenotypes )
 

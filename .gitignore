@@ -8,3 +8,6 @@ conda/
 
 .nextflow/
 .nextflow.log*
+
+# Mac
+.DS_Store

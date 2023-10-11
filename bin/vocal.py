@@ -15,15 +15,11 @@ import pandas as pd
 
 import aligner
 import AnnotateVariants
-from data_loader_tmp import D_GENEPOS
-from data_loader_tmp import GAP_CHAR
-from data_loader_tmp import HA_NUCLEOTIDE
-from data_loader_tmp import HA_PROTEIN
+from data_loader import D_GENEPOS
+from data_loader import GAP_CHAR
 import PSL_helper
 
 # Temp constants
-ref_seq_protein = HA_PROTEIN
-ref_seq_nucleotide = HA_NUCLEOTIDE
 ref_id = "HA"
 # ref_start = 21563
 # ref_end   = 25384
@@ -78,7 +74,7 @@ def PSL_align_query_ref(
     ref_seq,
     query_record,
     PSL_df,
-    gene_nt_seq=HA_PROTEIN,
+    gene_nt_seq,
     gene_nt_start=ref_start,
     gene_nt_end=ref_end,
     k_size=18,
@@ -149,6 +145,16 @@ def main():
         help="Set of complete consensus genome sequences (fasta format)",
     )
     parser.add_argument(
+        "--ref_nt",
+        required=True,
+        help="Reference sequence (DNA version)",
+    )
+    parser.add_argument(
+        "--ref_aa",
+        required=True,
+        help="Reference sequence (Protein version)",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         default="variant_table.tsv",
@@ -191,6 +197,8 @@ def main():
     )
     args = parser.parse_args()
 
+
+
     # Setting up the alignment strategy
     al_module = "Bio"
     if args.NoBioPython:
@@ -204,9 +212,12 @@ def main():
             PSL_df = PSL_helper.readPSL(args.PSL)
 
     verbose = args.verbose
-    # # Setting the start and end query values
-    # query_start_try = args.restrict_start
-    # query_end_try   = args.restrict_end
+    
+    # 1 is for HA, 0 is NA
+    ref_nt = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_nt),'fasta')][1]
+    ref_aa = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_aa),'fasta')][1]
+
+
     nrecords = 0
     nskipped = 0
     list_of_dfs = []
@@ -220,13 +231,13 @@ def main():
         try:
             if PSL_parse:
                 offset, ref_al, query_al = PSL_align_query_ref(
-                    ref_seq_nucleotide, 
+                    ref_nt, 
                     record.upper(), 
                     PSL_df,
                 )
             else:
                 offset, ref_al, query_al = Pairwise_align_query_ref(
-                    ref_seq_nucleotide,
+                    ref_nt,
                     record.upper(),
                     al_module,
                     args.restrict_start,

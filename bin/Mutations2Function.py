@@ -10,7 +10,7 @@ Annotate the list of mutations found in a dataframe
 
 import argparse
 
-from data_loader_tmp import DF_SPIKE_ROI
+from data_loader import extend_tuple
 import pandas as pd
 
 
@@ -56,10 +56,20 @@ def merge_variants_annotation(
         how="left",
         validate="many_to_many",
     )
+
     df_merge_position = df_merge_position.fillna(value={"type": "NotAnnotated"}).rename(
         columns={"ID_list": "infos"}
     )
-    ##TODO and check
+
+    L_GENES_ROI = pd.read_csv(roi_table, sep=';')
+    L_GENES_ROI_EXTENDED = [x for t in L_GENES_ROI for x in extend_tuple(t)]
+
+    ##Would be easier to expand the table for the following merges
+    DF_SPIKE_ROI = pd.DataFrame(
+        L_GENES_ROI_EXTENDED,
+        columns=["gene", "aa_position", "type", "functional domain"],
+    )
+
     df_merge_region = pd.merge(
         df_mutations,
         DF_SPIKE_ROI,
@@ -71,7 +81,7 @@ def merge_variants_annotation(
     return pd.concat([df_merge_position, df_merge_region], ignore_index=True)
 
 
-def annotateVariantTable(df_variants, annot_file):
+def annotateVariantTable(df_variants, annot_file, roi_table):
     """
     DataFrame * annot_file -> DataFrame
     Annotate the variants in the DataFrame using the table of annotations given in annot_file
@@ -84,7 +94,7 @@ def annotateVariantTable(df_variants, annot_file):
     else:
         raise TypeError("Not recognized file type")
     df_agg_annot = aggregateMutationTable(df_annot)
-    df_variant_with_annot = merge_variants_annotation(df_variants, df_agg_annot)
+    df_variant_with_annot = merge_variants_annotation(df_variants, df_agg_annot, roi_table)
     return df_variant_with_annot
 
 
@@ -107,6 +117,11 @@ def main():
         help="Table with information about lineage defining mutation and Variants Of Concern",
     )
     parser.add_argument(
+        "--roi_table",
+        required=True,
+        help="Table with Regions of Interest for the subtype",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         default="variants_with_phenotypes.tsv",
@@ -123,11 +138,12 @@ def main():
 
     tab_file = args.input
     annot_file = args.annotation
+    roi_table = args.roi_table
     out_table = args.output
 
     # Reading in the files
     df_variants = pd.read_csv(tab_file, sep="\t")
-    df_variant_with_annot = annotateVariantTable(df_variants, annot_file).sort_values(
+    df_variant_with_annot = annotateVariantTable(df_variants, annot_file, roi_table).sort_values(
         [
             "ID", 
             "aa_pos_ref_start", 

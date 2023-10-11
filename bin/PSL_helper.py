@@ -5,7 +5,7 @@ Functions to process PSL alignments fieldnames
 """
 
 from Bio import SeqIO
-from data_loader_tmp import GAP_CHAR
+from data_loader import GAP_CHAR
 import pandas as pd
 
 

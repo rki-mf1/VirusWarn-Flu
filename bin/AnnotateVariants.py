@@ -9,10 +9,10 @@ from itertools import groupby
 from operator import itemgetter
 import warnings
 
-from data_loader_tmp import AASTOP
-from data_loader_tmp import codons_stop
-from data_loader_tmp import get_aa_dict
-from data_loader_tmp import mutation_pattern
+from data_loader import AASTOP
+from data_loader import codons_stop
+from data_loader import get_aa_dict
+from data_loader import mutation_pattern
 import numpy as np
 import pandas as pd
 

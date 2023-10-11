@@ -72,7 +72,7 @@ if (params.subtype == 'H1N1' || 'h1n1') {
 //
 input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
 
-VOCAL_FLOW ( ref_nt, input_fasta, mutation_table )
+VOCAL_FLOW ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table )
 
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-the data to load, temporary (to merge with data_loader from the other script)
+The data to load
 """
 
 import pandas as pd
@@ -78,114 +78,10 @@ D_GENEPOS = {
 }
 
 
-L_GENES_ROI = [
-    ### ------ Glycosylation sites ------ ###
-    ### -------- Paper Goka 2014 -------- ###
-    (
-        "HA",
-        213,
-        215,
-        71,
-        71,
-        "RegionOfInterest",
-        "Glycosylation site",
-    ),
-    (
-        "HA",
-        312,
-        314,
-        104,
-        104,
-        "RegionOfInterest",
-        "Glycosylation site",
-    ),
-    (
-        "HA",
-        426,
-        428,
-        142,
-        142,
-        "RegionOfInterest",
-        "Glycosylation site",
-    ),
-    (
-        "HA",
-        432,
-        434,
-        144,
-        144,
-        "RegionOfInterest",
-        "Glycosylation site (variant)",
-    ),
-    (
-        "HA",
-        531,
-        533,
-        177,
-        177,
-        "RegionOfInterest",
-        "Glycosylation site",
-    ),
-    (
-        "HA",
-        516,
-        518,
-        172,
-        172,
-        "RegionOfInterest",
-        "Glycosylation site (variant)",
-    ),
-    (
-        "HA",
-        537,
-        539,
-        179,
-        179,
-        "RegionOfInterest",
-        "Glycosylation site (variant)",
-    ),
-    (
-        "HA",
-        858,
-        860,
-        286,
-        286,
-        "RegionOfInterest",
-        "Glycosylation site",
-    ),
-]
-
-
 def extend_tuple(t):
     name, nt_start, nt_end, aa_start, aa_end, type, fun = t
     return [(name, i, type, fun) for i in range(aa_start, aa_end)]
 
-
-L_GENES_ROI_EXTENDED = [x for t in L_GENES_ROI for x in extend_tuple(t)]
-
-##Would be easier to expand the table for the following merges
-DF_SPIKE_ROI = pd.DataFrame(
-    L_GENES_ROI_EXTENDED,
-    columns=["gene", "aa_position", "type", "functional domain"],
-)
-
-### Load HA from reference file
-HA_PROTEIN = [
-    str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa'),'fasta')
-][1]
-
-HA_NUCLEOTIDE = [
-    str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_nucleotide.fa'),'fasta')
-][1]
-
-### Load NA from reference file
-NA_PROTEIN = [
-    str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa'),'fasta')
-][0]
-
-NA_NUCLEOTIDE = [
-    str(rec.seq) for rec in SeqIO.parse(open('test-data/A(H1N1)pdm09/A-Brisbane-2-2018_nucleotide.fa'),'fasta')
-][0]
 
 def get_codon_dict():
     """
