@@ -15,7 +15,7 @@ process ANNOTATION {
     """
     echo "Step 2: Annotate mutation phenotypes"
 
-    python vocal/Mutations2Function.py \
+    Mutations2Function.py \
         -i ${variant_table} \
         -a ${mutation_table} \
         --roi_table ${roi_table} \

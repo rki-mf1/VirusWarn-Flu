@@ -12,17 +12,16 @@ workflow VOCAL_FLOW {
         roi_table
 
     main:
-        if (params.psl == 'yes' || 'y') {
-            PSL ( ref_nt, input_fasta )
-            VOCAL ( 'PSL', input_fasta, ref_nt, ref_aa, PSL.out.output_psl )
-        } else if (params.psl == 'no' || 'n') {
-            VOCAL ( '', input_fasta, ref_nt, ref_aa )
+        if (params.psl == 'y') {
+            PSL ( ref_nt, ref_aa, input_fasta )
+            ANNOTATION ( PSL.out.variant_table, mutation_table, roi_table)
+        } else if (params.psl == 'n') {
+            VOCAL ( input_fasta, ref_nt, ref_aa )
+            ANNOTATION ( VOCAL.out.variant_table, mutation_table, roi_table)
         } else {
             exit 1,
             "ERROR: $params.psl is an invalid input for the parameter psl!\n Please choose between yes/y and no/n!\n"
         }
-
-        ANNOTATION ( VOCAL.out.variant_table, mutation_table, roi_table)
 
         REPORT ( ANNOTATION.out.variants_with_phenotypes )
 

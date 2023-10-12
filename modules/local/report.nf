@@ -15,12 +15,12 @@ process REPORT {
     """
     echo "Step 3: Detect and alert emerging variants"
 
-    vocal/Script_VOCAL_unified.R \
+    Script_VOCAL_unified.R \
         -f ${variants_with_phenotypes} \
         -so "vocal-alerts-samples-all.csv" \
         -co "vocal-alerts-clusters-summaries-all.csv"
 
-    python vocal/Reporter.py  \
+    Reporter.py  \
         -s vocal-alerts-samples-all.csv \
         -c vocal-alerts-clusters-summaries-all.csv \
         -o vocal-report.html 

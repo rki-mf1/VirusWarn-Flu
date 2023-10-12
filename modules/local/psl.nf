@@ -5,10 +5,11 @@ process PSL {
 
     input:
         path ref_nt
+        path ref_aa
         path input_fasta
 
     output:
-        path "output.psl",          emit: output_psl
+        path "variant_table.tsv",   emit: variant_table
 
     script:
     """
@@ -18,6 +19,13 @@ process PSL {
         ${input_fasta} \
         -threads=4 \
         "output.psl"
+
+    vocal.py \
+        -i ${input_fasta} \
+        --ref_nt ${ref_nt} \
+        --ref_aa ${ref_aa} \
+        --PSL "output_psl" \
+        -o "variant_table.tsv"
     """
 
     stub:
