@@ -36,22 +36,25 @@ QUERY_END_RESTRICTED = 1750 #ref_end + max_shift_allowed
 def Pairwise_align_query_ref(
     ref_seq,
     query_record,
-    align_method="Bio",
+    align_method="parasail",
     align_start_on_ref=QUERY_START_RESTRICTED,
     align_end_on_ref=QUERY_END_RESTRICTED,
 ):
     """
     Performs the alignment of query on ref using a pairwise alignment
     method from the aligner module:
-    align_method == "Bio" -> uses biopython pairwise aligner
-    align_method == "Our" -> uses our NW aligner (experimental)
+    align_method == "bio" -> uses biopython pairwise aligner
+    align_method == "our" -> uses our NW aligner (experimental)
     returns (offset, align_ref, align_query)
     """
     aligner_func = None
-    if align_method == "our":
+    if align_method == "parasail":
+        print("== Will be using parasail-python alignment Module")
+        aligner_func = aligner.parasail_align
+    elif align_method == "our":
         print("== Will be using our alignment Module")
         aligner_func = aligner.align
-    elif align_method == "Bio":
+    elif align_method == "bio":
         print("== Will be using the Bio.pairwise2 Module: ")
         aligner_func = aligner.Biopairwise_align
     else:
@@ -60,14 +63,24 @@ def Pairwise_align_query_ref(
     print(
         f"Finding Alignment of the HA protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
     )
-    s_time = time.time()
-    offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
-    offset = align_start_on_ref + offset_tmp
-    print("{:.1f} seconds needed".format(time.time() - s_time))
-    print(
-        f"Found alignment of length {len(ref_al)}, starting at {offset} in query sequence"
-    )
-    return (offset, ref_al, query_al)
+    if align_method == "parasail":
+        s_time = time.time()
+        ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
+        offset = align_start_on_ref + offset_tmp
+        print("{:.1f} seconds needed".format(time.time() - s_time))
+        print(
+            f"Found alignment of length {len(ref_al)}, starting at {offset} in query sequence"
+        )
+        return (ref_al, query_al)
+    else:
+        s_time = time.time()
+        offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
+        offset = align_start_on_ref + offset_tmp
+        print("{:.1f} seconds needed".format(time.time() - s_time))
+        print(
+            f"Found alignment of length {len(ref_al)}, starting at {offset} in query sequence"
+        )
+        return (offset, ref_al, query_al)
 
 
 def PSL_align_query_ref(
@@ -197,10 +210,8 @@ def main():
     )
     args = parser.parse_args()
 
-
-
     # Setting up the alignment strategy
-    al_module = "Bio"
+    al_module = "parasail"
     if args.NoBioPython:
         al_module = "our"
     PSL_parse = False
@@ -216,7 +227,6 @@ def main():
     # 1 is for HA, 0 is NA
     ref_nt = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_nt),'fasta')][1]
     ref_aa = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_aa),'fasta')][1]
-
 
     nrecords = 0
     nskipped = 0

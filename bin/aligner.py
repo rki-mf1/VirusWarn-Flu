@@ -10,13 +10,13 @@ helper functions for aligning sequences from the BioPython pairwise2 library
 import time
 
 from Bio import pairwise2
+import parasail
 
 """
 
 Historical aligner part
 
 """
-
 
 def initialize_matrix(len1, len2, gap_penalty):
     matrix = [0 for i in range((len1 + 1) * (len2 + 1))]
@@ -122,7 +122,6 @@ Biopython part
 
 """
 
-
 def Biopairwise_align(
     ref_seq, query_seq, match=2, mismatch=-1, gap_open=-2, gap_extend=-0.5
 ):
@@ -135,3 +134,23 @@ def Biopairwise_align(
     query_al = alignments[0].seqB[al_start:al_end]
     offset = al_start + 1
     return (offset, ref_al, query_al)
+
+
+"""
+
+Parasail part
+
+"""
+
+# covSonar2 will use gapopen = 16 and gapextend = 4
+def parasail_align(
+    ref_seq: str, query_seq: str, gapopen: int = -2, gapextend: int = -0.5 
+):
+    """
+    Use semi-global Smith-Waterman algorithm from parasail-python to align the sequence to the reference
+    """
+    alignment = parasail.sg_trace_striped_32(
+            query_seq, ref_seq, gapopen, gapextend, parasail.dnafull
+    )
+
+    return alignment.traceback.ref, alignment.traceback.query
