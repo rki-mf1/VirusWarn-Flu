@@ -35,7 +35,7 @@ QUERY_END_RESTRICTED = 1750 #ref_end + max_shift_allowed
 
 def Pairwise_align_query_ref(
     ref_seq,
-    query_record,
+    query_seq,
     align_method="parasail",
     align_start_on_ref=QUERY_START_RESTRICTED,
     align_end_on_ref=QUERY_END_RESTRICTED,
@@ -59,22 +59,22 @@ def Pairwise_align_query_ref(
         aligner_func = aligner.Biopairwise_align
     else:
         raise ValueError("Aligner function option not known")
-    query_seq_trunc = query_record.seq[align_start_on_ref:align_end_on_ref]
+    #query_seq_trunc = query_record.seq[align_start_on_ref:align_end_on_ref]
     print(
         f"Finding Alignment of the HA protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
     )
     if align_method == "parasail":
         s_time = time.time()
-        ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
-        offset = align_start_on_ref + offset_tmp
+        ref_al, query_al = aligner_func(ref_seq, query_seq)
+        #offset = align_start_on_ref + offset_tmp
         print("{:.1f} seconds needed".format(time.time() - s_time))
         print(
-            f"Found alignment of length {len(ref_al)}, starting at {offset} in query sequence"
+            f"Found alignment of length {len(ref_al)}"
         )
         return (ref_al, query_al)
     else:
         s_time = time.time()
-        offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq_trunc)
+        offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq)
         offset = align_start_on_ref + offset_tmp
         print("{:.1f} seconds needed".format(time.time() - s_time))
         print(
@@ -221,8 +221,6 @@ def main():
             PSL_df = PSL_helper.readPSLfromPresident(args.PSL)
         else:
             PSL_df = PSL_helper.readPSL(args.PSL)
-
-    verbose = args.verbose
     
     # 1 is for HA, 0 is NA
     ref_nt = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_nt),'fasta')][1]
@@ -232,23 +230,26 @@ def main():
     nskipped = 0
     list_of_dfs = []
     fastain = args.input
+    verbose = args.verbose
+
     print(f"Opening {fastain}")
     for record in SeqIO.parse(fastain, "fasta"):
         ##Quick hack to have the record IDs with the spaces masked (compatible with president)
         record.id = record.description.replace(" ", "%space%")
+        query_seq = str(record.seq.upper())
         if nrecords % 100 == 0:
             print(f"Sequence number {nrecords+1}: {record.id}")
         try:
             if PSL_parse:
                 offset, ref_al, query_al = PSL_align_query_ref(
                     ref_nt, 
-                    record.upper(), 
+                    query_seq, 
                     PSL_df,
                 )
             else:
-                offset, ref_al, query_al = Pairwise_align_query_ref(
+                ref_al, query_al = Pairwise_align_query_ref(
                     ref_nt,
-                    record.upper(),
+                    query_seq,
                     al_module,
                     args.restrict_start,
                     args.restrict_end,
@@ -277,7 +278,7 @@ def main():
         if not df.empty:
             df["ID"] = record.id
             df["target_gene"] = ref_id
-            df["target_gene_start"] = offset
+            #df["target_gene_start"] = offset
             # merge with the other dataframes
             # print(df)
             list_of_dfs.append(df)
