@@ -2,10 +2,9 @@
 
 """
 The data to load
-"""
 
-import pandas as pd
-from Bio import SeqIO
+vocal-flu Version revised by @chkirschbaum
+"""
 
 aminoacids = [
     "A",
@@ -78,11 +77,6 @@ D_GENEPOS = {
 }
 
 
-def extend_tuple(t):
-    name, nt_start, nt_end, aa_start, aa_end, type, fun = t
-    return [(name, i, type, fun) for i in range(aa_start, aa_end)]
-
-
 def get_codon_dict():
     """
     Gets a dictionary of amino acids (keys) and synonymous codon lists (values).
@@ -111,10 +105,25 @@ def get_aa_dict():
     return AADICT
 
 
-def mutation_pattern(mutation_type, pos_start, pos_end, AAfrom, AAto):
+def mutation_pattern(
+        mutation_type: str, 
+        pos_start: int, 
+        pos_end: int, 
+        AAfrom: str, 
+        AAto: str,
+    ) -> str:
     """
-    str * str * str * str - > str
-    return the mutation pattern associated with a
+    Gets a string with the associated mutation pattern for a mutation type at a given position.
+
+    Args:
+        mutation_type (str): Type of the Mutation. Mutation (M), Terminal (T), Deletion (D), Insertion (I).
+        pos_start (int): Start position of the pattern.
+        pos_end (int): End position of the pattern.
+        AAfrom (str): Amino Acid at the start position.
+        AAto (str): Amino Acid at the end position.
+
+    Returns:
+        str: Associated mutation pattern
     """
     if mutation_type == "M":
         return f"{AAfrom}{pos_start}{AAto}"
