@@ -8,6 +8,7 @@ Vocal is a simple Variants of Concern Alert System Script
 
 import argparse
 import time
+from typing import Tuple
 
 from Bio import pairwise2
 from Bio import SeqIO
@@ -34,53 +35,43 @@ QUERY_END_RESTRICTED = 1750 #ref_end + max_shift_allowed
 
 
 def Pairwise_align_query_ref(
-    ref_seq,
-    query_seq,
-    align_method="parasail",
-    align_start_on_ref=QUERY_START_RESTRICTED,
-    align_end_on_ref=QUERY_END_RESTRICTED,
-):
+    ref_seq: str,
+    query_seq: str,
+    align_method: str = "parasail",
+    align_start_on_ref: int = QUERY_START_RESTRICTED,
+    align_end_on_ref: int = QUERY_END_RESTRICTED,
+) -> Tuple[str, str]:
     """
-    Performs the alignment of query on ref using a pairwise alignment
-    method from the aligner module:
-    align_method == "bio" -> uses biopython pairwise aligner
-    align_method == "our" -> uses our NW aligner (experimental)
-    returns (offset, align_ref, align_query)
+    Performs the alignment of query on reference using a pairwise alignment.
+
+    Args:
+        query_seq (str): Query sequence to align.
+        ref_seq (str): Reference sequence to align against.
+        align_method (str, optional): Aligner to use. Defaults to parasail.
+        align_start_on_ref (int, optional): Start of the query to align. Defaults to QUERY_START_RESTRICTED.
+        align_end_on_ref (int, optional): End of the query to align. Defaults to QUERY_END_RESTRICTED.
+
+    Returns:
+        Tuple[str, str]: Tuple containing the aligned reference sequence and query sequence
     """
     aligner_func = None
     if align_method == "parasail":
         print("== Will be using parasail-python alignment Module")
         aligner_func = aligner.parasail_align
-    elif align_method == "our":
-        print("== Will be using our alignment Module")
-        aligner_func = aligner.align
-    elif align_method == "bio":
-        print("== Will be using the Bio.pairwise2 Module: ")
-        aligner_func = aligner.Biopairwise_align
     else:
         raise ValueError("Aligner function option not known")
-    #query_seq_trunc = query_record.seq[align_start_on_ref:align_end_on_ref]
+
     print(
-        f"Finding Alignment of the HA protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
+        f"Finding Alignment of the {ref_id} protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
     )
-    if align_method == "parasail":
-        s_time = time.time()
-        ref_al, query_al = aligner_func(ref_seq, query_seq)
-        #offset = align_start_on_ref + offset_tmp
-        print("{:.1f} seconds needed".format(time.time() - s_time))
-        print(
-            f"Found alignment of length {len(ref_al)}"
-        )
-        return (ref_al, query_al)
-    else:
-        s_time = time.time()
-        offset_tmp, ref_al, query_al = aligner_func(ref_seq, query_seq)
-        offset = align_start_on_ref + offset_tmp
-        print("{:.1f} seconds needed".format(time.time() - s_time))
-        print(
-            f"Found alignment of length {len(ref_al)}, starting at {offset} in query sequence"
-        )
-        return (offset, ref_al, query_al)
+    
+    s_time = time.time()
+    ref_al, query_al = aligner_func(ref_seq, query_seq)
+    print("{:.1f} seconds needed".format(time.time() - s_time))
+    print(
+        f"Found alignment of length {len(ref_al)}"
+    )
+    return ref_al, query_al
 
 
 def PSL_align_query_ref(
@@ -197,12 +188,6 @@ def main():
         help="END coordinate for restricted alignment of the query sequences (estimated position of the spike)",
     )
     parser.add_argument(
-        "-p",
-        "--NoBioPython",
-        action="store_true",
-        help="Does not use biopython aligner",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -212,8 +197,7 @@ def main():
 
     # Setting up the alignment strategy
     al_module = "parasail"
-    if args.NoBioPython:
-        al_module = "our"
+
     PSL_parse = False
     if len(args.PSL) > 0:
         PSL_parse = True
