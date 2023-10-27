@@ -6,11 +6,9 @@ HA	A186T	MutationOfConcern 	NA	UNCLEAR - Increase severe disease	doi: 10.3390/v1
 HA	S203T	MutationOfConcern 	NA	Mask receptor-binding site	doi: 10.1007/s00430-013-0291-4
 HA	I216K	MutationOfConcern 	NA	Increase transmission	doi: 10.1007/s00430-013-0291-4
 HA	I216V	MutationOfConcern 	NA	UNCLEAR - Increase transmission	doi: 10.1007/s00430-013-0291-4
-HA	D222G	MutationOfConcern 	NA	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1093/infdis/jis539 
+HA	D222G	MutationOfConcern 	NA	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1093/infdis/jis539, doi: 10.1128/JVI.00936-10  
 HA	D222E	MutationOfConcern 	NA	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
-HA	D222N	MutationOfConcern 	NA	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
-HA	D239N	MutationOfConcern 	NA	Association with fatality	doi: 10.1590/S0074-02762011000500014 
-HA	D239G	MutationOfConcern 	NA	Increase severe disease	doi: 10.1128/JVI.00936-10 
+HA	D222N	MutationOfConcern 	NA	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087, doi: 10.1590/S0074-02762011000500014 
 HA	Q293H	MutationOfConcern 	NA	UNCLEAR - Increase severe disease	doi: 10.1093/infdis/jis539 
 HA	Q310H	MutationOfConcern 	NA	Increase severe disease	doi: 10.4161/cc.9.5.10913
 HA	E374K	MutationOfConcern 	NA	Vaccination breakthrough	doi: 10.1007/s00430-013-0291-4
