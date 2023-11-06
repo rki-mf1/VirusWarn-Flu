@@ -1,0 +1,27 @@
+gene	amino acid	type	ID	comment	source
+HA	E83K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	S126N	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	S128P	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	S137A	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	A138V	MutationOfConcern	NA	Increased infectivity in SIAT cells	doi:10.1371/journal.pone.0112302
+HA	G143R	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	I155T	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	N158D	MutationOfConcern	NA	Loss of N-Glycosylation, increased binding and transmission	doi:10.1371/journal.pone.0112302
+HA	T160A	MutationOfConcern	NA	Loss of N-Glycosylation, increased binding and transmission	doi:10.1371/journal.pone.0112302
+HA	N186K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	D187G	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	E190G	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	T192I	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	K193R	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	Q196H	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	Q196R	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	N197K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	V214I	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	Q226L	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	S227N	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	G228S	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	P239S	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	E255K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
+HA	C328P329insK	MutationOfConcern	NA	Poly-basic cleavage, increase pathogenicity	doi:10.1371/journal.pone.0112302
+HA	C328P329insR	MutationOfConcern	NA	Poly-basic cleavage, increase pathogenicity	doi:10.1371/journal.pone.0112302
+HA	R496K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
