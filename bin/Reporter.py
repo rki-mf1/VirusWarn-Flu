@@ -242,24 +242,24 @@ def main(args):
     # VOC samples with GREY alert
     # _cluster_VOC_grey = get_samples_VOC_GREY(_samples, ECDC_VOC)[['ID','ListMutationsSelected_D','ListMutationsSelected_M','ListMutationsSelected_I','LINEAGE']]
 
-    if _positive_selection:
-        html_template = os.path.join(ROOT_DIR, "email-template/email.PS.html")
-    elif _short_form:
-        _top10_df.drop("ListFrequentMutations_gt30perc", axis=1, inplace=True)
+    #if _positive_selection:
+    #    html_template = os.path.join(ROOT_DIR, "email-template/email.PS.html")
+    #elif _short_form:
+    #    _top10_df.drop("ListFrequentMutations_gt30perc", axis=1, inplace=True)
         # list only top 10
-        if len(_ECDC_notVOC_PINKRED) > 10:
-            _ECDC_notVOC_PINKRED = _ECDC_notVOC_PINKRED[0:10]
+    #    if len(_ECDC_notVOC_PINKRED) > 10:
+    #        _ECDC_notVOC_PINKRED = _ECDC_notVOC_PINKRED[0:10]
 
-        if len(_sample_high_mut) > 10:
-            _sample_high_mut = _sample_high_mut[0:10]
-        if len(_ECDC_GREY) > 10:
-            _ECDC_GREY = _ECDC_GREY[0:10]
+    #    if len(_sample_high_mut) > 10:
+    #        _sample_high_mut = _sample_high_mut[0:10]
+    #    if len(_ECDC_GREY) > 10:
+    #        _ECDC_GREY = _ECDC_GREY[0:10]
 
-        html_template = os.path.join(ROOT_DIR, "email-template/email.sum.html")
-    else:
+    #    html_template = os.path.join(ROOT_DIR, "email-template/email.sum.html")
+    #else:
 
         # Read the template file
-        html_template = os.path.join(ROOT_DIR, "email-template/email.html")
+        #html_template = os.path.join(ROOT_DIR, "email-template/email.html")
         # if not os.path.exists(tmp_dir):
         #    os.makedirs(tmp_dir)
 
@@ -270,24 +270,23 @@ def main(args):
         #    print("Error: %s - %s." % (e.filename, e.strerror))
 
     # generate HTML from template
-    html = render_template(
-        html_template, **locals()
-    )  # locals means using all local var in this program
+    #html = render_template(
+    #    html_template, **locals()
+    #)  # locals means using all local var in this program
 
     # to save the results
-    html = render_template(
-        html_template, **locals()
-    )  # locals means using all local var in this program
-    with open(output, "w") as fh:
-        fh.write(html)
+    #html = render_template(
+    #    html_template, **locals()
+    #)  # locals means using all local var in this program
+    #with open(output, "w") as fh:
+    #    fh.write(html)
 
 
 if __name__ == "__main__":
 
     parser = ap.ArgumentParser(
-        description=" Output directory (--out_dir) are requried",
-        epilog=""" Please let us know if there is any problem at https://github.com/rki-mf1/sc2-vocal/
-                                        """,
+        description="Output directory (--out_dir) are requried",
+        epilog="""Please let us know if there is any problem at https://github.com/rki-mf1/sc2-vocal/""",
     )
     parser.add_argument(
         "-tmp",
@@ -299,7 +298,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--vocal_alert_samples",
-        help=" vocal_alerts_samples_all.csv",
+        help="vocal_alerts_samples_all.csv",
         required=True,
     )
 
@@ -316,22 +315,37 @@ if __name__ == "__main__":
         default=ROOT_DIR + "/data",
     )
 
-    parser.add_argument("--positive-selection", action="store_true")
-
     parser.add_argument(
-        "--from_date", type=str, default="", help="start date in the format YYYY-MM-DD."
+        "--positive-selection", 
+        action="store_true",
     )
 
     parser.add_argument(
-        "--to_date", type=str, default="", help="end date in the format YYYY-MM-DD."
+        "--from_date", 
+        type=str, 
+        default="", 
+        help="start date in the format YYYY-MM-DD."
     )
 
     parser.add_argument(
-        "-S", "--short_sum", help="Generate report in short form", action="store_true"
+        "--to_date", 
+        type=str, 
+        default="", 
+        help="end date in the format YYYY-MM-DD."
     )
 
     parser.add_argument(
-        "-P", "--pdf", help="Generate report in PDF format", action="store_true"
+        "-S", 
+        "--short_sum", 
+        help="Generate report in short form", 
+        action="store_true"
+    )
+
+    parser.add_argument(
+        "-P", 
+        "--pdf", 
+        help="Generate report in PDF format", 
+        action="store_true"
     )
 
     parser.add_argument(

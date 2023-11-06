@@ -17,13 +17,13 @@ process REPORT {
 
     Script_VOCAL_unified.R \
         -f ${variants_with_phenotypes} \
-        -so "vocal-alerts-samples-all.csv" \
-        -co "vocal-alerts-clusters-summaries-all.csv"
+        -s "vocal-alerts-samples-all.csv" \
+        -c "vocal-alerts-clusters-summaries-all.csv"
 
     Reporter.py  \
-        -s vocal-alerts-samples-all.csv \
-        -c vocal-alerts-clusters-summaries-all.csv \
-        -o vocal-report.html 
+        -s "vocal-alerts-samples-all.csv" \
+        -c "vocal-alerts-clusters-summaries-all.csv" \
+        -o "vocal-report.html" 
     """
 
     stub:

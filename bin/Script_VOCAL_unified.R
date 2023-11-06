@@ -41,14 +41,14 @@ option_list <- list(
     help = "file containing metadata on the samples (optional)",
   ),
   make_option(
-    c("-v", "--anno_vocal_path"),
-    default = file.path(getwd(), "data"),
-    help = "directory path where Vocal database is stored (files concerned: ECDC_assigned_variants.csv and escape_data_bloom_lab.csv and filiation_information) [default %default]",
+    c("-s", "--vocal_alert_samples"), 
+    default = "vocal_alerts_samples_all.csv",
+    help = "Output name for alert samples csv",
   ),
   make_option(
-    c("-o", "--outdir"), 
-    default = "results/",
-    help = "Output directory [default %default]",
+    c("-c", "--vocal_alert_clusters"), 
+    default = "vocal_alerts_clusters_summaries_all.csv",
+    help = "Output name for alert clusters csv",
   ),
   make_option(
     c("--id_column"), 
@@ -71,10 +71,11 @@ option_list <- list(
     help = "Column name for geolocation (this argument will be used if file_annotations is used) [default %default]",
   ),
   make_option(
-    c("--verbose"), default = FALSE, 
+    c("--verbose"), 
+    default = FALSE, 
     action = "store_true",
     help = "Write more output to the console",
-  ),
+  )
 )
 
 parser = OptionParser(option_list = option_list)
@@ -125,7 +126,6 @@ write_csv_wcomment = function(data, fout, comments = c()) {
 
 ## Setting up some variables and parameters
 VARIANT_TYPE_LEVELS = c(
-  "LineageDefiningMutation",
   "MutationOfConcern",
   "RegionOfInterest",
   "NotAnnotated",
@@ -160,21 +160,16 @@ file_variant_table = args$file_variant_table
 file_annotations = args$file_annotations
 
 
-out_path = str_c(args$outdir)
-if (!dir.exists(out_path)) {
-  dir.create(out_path)
-}
+#out_path = str_c(args$outdir)
+#if (!dir.exists(out_path)) {
+#  dir.create(out_path)
+#}
 ######## VOCAL parameter files ########
 ## Preparing the information data
 
-vocal_path = args$anno_vocal_path
-
-file_ECDCvariants_csv = file.path(vocal_path,
-                                  "ECDC_assigned_variants.csv")
-file_BLOOM_mutation_csv = file.path(vocal_path,
-                                    'escape_data_bloom_lab.csv')
-
-file_variant_filiations_csv = file.path(vocal_path, "lineage.all.tsv")
+file_ECDC_variants_csv = file.path("../../../data/ECDC_assigned_variants.csv")
+file_BLOOM_mutation_csv = file.path("../../../data/escape_data_bloom_lab.csv")
+file_variant_filiations_csv = file.path("../../../data/lineage.all.tsv")
 
 antibody_escape_score_raw = read_csv(file_BLOOM_mutation_csv,
                                      col_types = "cccicciccdcddddcic")
@@ -195,7 +190,7 @@ antibody_escape_score_summary = suppressMessages( antibody_escape_score_raw %>%
 
 ## Gathering Information about the set of Variants of Concern and Variants of Interest
 ## Make the parsing of the files more robust (especially column names)
-ECDC_variants = read_csv(file_ECDCvariants_csv, , col_types = cols()) #,  show_col_types = FALSE)
+ECDC_variants = read_csv(file_ECDC_variants_csv, , col_types = cols()) #,  show_col_types = FALSE)
 variants_filiation = read_tsv(file_variant_filiations_csv, , col_types = cols())
 
 VariantsOfConcern = suppressMessages(ECDC_variants %>% filter(Status == "VOC") %>%
@@ -321,7 +316,6 @@ score_mutation <- function(pheno_table) {
   pheno_table_infomask = pheno_table %>%
     mutate(
       infomask = str_c(
-        LineageDefiningMutation,
         MutationOfConcern,
         RegionOfInterest,
         NotAnnotated,
@@ -331,7 +325,6 @@ score_mutation <- function(pheno_table) {
     )
   
   scores_combination = expand_grid(
-    LineageDefiningMutation = c(TRUE, FALSE),
     MutationOfConcern = c(TRUE, FALSE),
     RegionOfInterest = c(TRUE, FALSE),
     NotAnnotated = c(TRUE, FALSE),
@@ -352,7 +345,7 @@ score_mutation <- function(pheno_table) {
       s_moc = case_when(
         VariantType != OTHER_KEY &
           !NotAnnotated &
-          MutationOfConcern & !LineageDefiningMutation ~ 1,
+          MutationOfConcern ~ 1,
         VariantType == OTHER_KEY &
           !NotAnnotated & MutationOfConcern ~ 1,
         TRUE ~ 0
@@ -363,7 +356,7 @@ score_mutation <- function(pheno_table) {
           !NotAnnotated & !MutationOfConcern & RegionOfInterest ~ 1,
         TRUE ~ 0
       )
-    ) %>% mutate(across(LineageDefiningMutation:NotAnnotated, as.integer))
+    ) %>% mutate(across(NotAnnotated, as.integer))
   pheno_table_with_score = suppressMessages(inner_join(pheno_table_infomask,
                                       scores_combination))
   return(pheno_table_with_score)
@@ -389,7 +382,6 @@ var_pheno_score_summary = suppressMessages(var_pheno_wide_filter_with_score %>%
                                                s_pm > 0],
                                   collapse = ","),
     nMutationsTotal = n(),
-    nLineageDefining = sum(LineageDefiningMutation),
     across(starts_with("s_"), sum),
     across(ends_with("_escape"), ~ sum(., na.rm = TRUE),
            .names = "sum_of_{.col}")
@@ -427,7 +419,6 @@ var_pheno_summary_wide = var_pheno_score_summary %>%
     values_from = c(
       "ListMutationsSelected",
       "nMutationsTotal",
-      "nLineageDefining",
       "s_moc",
       "s_roi",
       "s_pm",
@@ -436,7 +427,6 @@ var_pheno_summary_wide = var_pheno_score_summary %>%
     values_fill = list(
       ListMutationsSelected = "",
       nMutationsTotal = 0 ,
-      nLineageDefining = 0,
       s_moc = 0 ,
       s_roi = 0,
       s_pm = 0
@@ -526,7 +516,7 @@ print(prediction_overview)
 
 write.table(
   prediction_overview,
-  file = file.path(out_path, "prediction-overview.txt"),
+  file = file.path("prediction-overview.txt"),
   sep = "\t"
 )
 
@@ -603,7 +593,7 @@ vocal_list_samples_with_alert = suppressMessages(var_pheno_summary_wide_with_ale
           desc(DATE_COL))
   )
 ########### Output goes Here ###########
-log_debug("Write Results at: {out_path}")
+#log_debug("Write Results at: {out_path}")
 
 vocal_common_mutations_in_clusters = suppressMessages( vocal_list_samples_with_alert %>%
   filter(alert_level != "grey") %>%
@@ -669,11 +659,11 @@ vocal_list_clusters_properties_with_mutations = suppressMessages(vocal_common_mu
 )
 write_csv(
   vocal_list_clusters_properties_with_mutations,
-  file = file.path(out_path,
+  file = file.path(#out_path,
                    "vocal-alerts-clusters-summaries-all.csv")
 )
 
-error_log_outputFile <- file.path(out_path, "R-error-output.txt")
+error_log_outputFile <- file.path("R-error-output.txt")
 
 tryCatch({
   vocal_samples_out = vocal_list_samples_with_alert %>%
@@ -723,7 +713,7 @@ tryCatch({
     ))
   
   write_csv(vocal_samples_out,
-            file = file.path(out_path, "vocal-alerts-samples-all.csv"))
+            file = file.path("vocal-alerts-samples-all.csv"))
 },
 error = function(e) {
   cat(
