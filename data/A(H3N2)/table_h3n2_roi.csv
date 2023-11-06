@@ -1,0 +1,4 @@
+name,nt_start,nt_end,aa_start,aa_end,type,func,source
+HA,61,63,21,21,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
+HA,472,474,158,158,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
+HA,478,480,160,160,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
