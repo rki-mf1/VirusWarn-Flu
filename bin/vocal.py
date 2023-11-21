@@ -221,6 +221,12 @@ def main():
         ##Quick hack to have the record IDs with the spaces masked (compatible with president)
         record.id = record.description.replace(" ", "%space%")
         query_seq = str(record.seq.upper())
+
+        if 'R' in query_seq: # IUPAC A or G
+            query_seq = query_seq.replace('R', 'N')
+        elif 'S' in query_seq: # IUPAC G or C
+            query_seq = query_seq.replace('S', 'N')
+        
         if nrecords % 100 == 0:
             print(f"Sequence number {nrecords+1}: {record.id}")
         try:
@@ -246,6 +252,7 @@ def main():
         if verbose:
             print("Alignment of query to ref:")
             print(pairwise2.format_alignment(ref_al, query_al, 0, 1, len(ref_al)))
+        
         # We only process sequences with ACGT- characters
         if not set(query_al) <= {"A", "T", "G", "C", "-", "N"}:
             print(
@@ -257,8 +264,10 @@ def main():
             nskipped += 1
             continue
         nrecords += 1
+
         df = AnnotateVariants.alignedCDSvariants(ref_al, query_al, verbose=verbose)
         # print(f"Searching for Amino acids differences, found a total of {len(df)} variations")
+        
         if not df.empty:
             df["ID"] = record.id
             df["target_gene"] = ref_id
