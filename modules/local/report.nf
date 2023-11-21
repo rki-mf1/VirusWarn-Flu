@@ -5,31 +5,30 @@ process REPORT {
 
     input:
         path variants_with_phenotypes
+        path rmd
 
     output:
-        path "vocal-alerts-samples-all.csv",                emit: alerts_samples
-        path "vocal-alerts-clusters-summaries-all.csv",     emit: alerts_clusters
-        path "vocal-report.html",                           emit: report
+        path "fluwarnsystem-alerts-samples-all.csv",                emit: alerts_samples
+        path "fluwarnsystem-alerts-clusters-summaries-all.csv",     emit: alerts_clusters
+        path "fluwarnsystem-report.html",                           emit: report
 
     script:
     """
     echo "Step 3: Detect and alert emerging variants"
 
-    Script_VOCAL_unified.R \
+    prepare_report.R \
         -f ${variants_with_phenotypes} \
-        -s "vocal-alerts-samples-all.csv" \
-        -c "vocal-alerts-clusters-summaries-all.csv"
+        -s "fluwarnsystem-alerts-samples-all.csv" \
+        -c "fluwarnsystem-alerts-clusters-summaries-all.csv"
 
-    Reporter.py  \
-        -s "vocal-alerts-samples-all.csv" \
-        -c "vocal-alerts-clusters-summaries-all.csv" \
-        -o "vocal-report.html" 
+    Rscript --vanilla -e \
+        "rmarkdown::render(input = \'${rmd}\', output_file = \'fluwarnsystem-report.html\', params = list(alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', alert_clusters = \'fluwarnsystem-alerts-clusters-summaries-all.csv\'))"
     """
 
     stub:
     """
-    touch vocal-alerts-samples-all.csv 
-    touch vocal-alerts-clusters-summaries-all.csv 
-    touch vocal-report.html 
+    touch fluwarnsystem-alerts-samples-all.csv 
+    touch fluwarnsystem-alerts-clusters-summaries-all.csv 
+    touch fluwarnsystem-report.html 
     """
 }

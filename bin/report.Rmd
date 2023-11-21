@@ -1,0 +1,196 @@
+---
+title: "Report FluWarnSystem `r Sys.Date()`"
+author: "FluWarnSystem"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+  alert_samples: "fluwarnsystem-alerts-samples-all.csv"
+  alert_clusters: "fluwarnsystem-alerts-clusters-summaries-all.csv"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+```
+
+```{r import, include=FALSE}
+library(dplyr)
+library(stringr)
+library(kableExtra)
+
+library(ggplot2)
+library(plotly)
+```
+
+```{r data, include=FALSE}
+#samples <- read.delim(params$alert_samples, sep = ',')
+#clusters <- read.delim(params$alert_clusters, sep = ',')
+samples <- read.delim("/Users/christinakirschbaum/Documents/GitHub/vocal-flu/results/03_report/fluwarnsystem-alerts-samples-all.csv", sep = ',')
+clusters <- read.delim("/Users/christinakirschbaum/Documents/GitHub/vocal-flu/results/03_report/fluwarnsystem-alerts-clusters-summaries-all.csv", sep = ',')
+```
+
+
+## Alert level <span style="color: red;">RED</span>
+#### *Sequences with at least 1 MOC and 5 or more MOC & ROI*
+
+```{r red table, echo=FALSE, message=FALSE, warning=FALSE}
+red_table <- filter(samples, alert_level == 'red') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+for (i in red_table["ID"]) {
+  new <- str_remove_all(i, "%space%")
+  red_table["ID"][red_table["ID"] == i] <- new
+}
+
+for (i in red_table["ListMutationsSelected_M"]){
+  new <- str_split(i, ",")
+  red_table["ListMutationsSelected_M"][red_table["ListMutationsSelected_M"] == i] <- new
+}
+  
+names(red_table)[2] <- "Mutations"
+names(red_table)[3] <- "Deletions"
+names(red_table)[4] <- "Insertions"
+
+kbl(red_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
+```
+
+```{r red heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+mut_freq <- rep(0, 566)
+for (i in red_table["Mutations"]){
+  for(j in i){
+    ind <- as.integer(str_sub(j, 2, -2))
+    mut_freq[ind] <- mut_freq[ind] + 1
+  }
+}
+
+data <- data.frame(x = seq(1, 566), y = mut_freq)
+
+ggplot <- ggplot(data, aes(x=x, y=y)) +
+  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+  geom_point( color="red", size=3 ) +
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank(),
+    aspect.ratio = 1/2
+  ) +
+  xlab("Amino Acid Position") +
+  ylab("Number of Mutations")
+
+ggplotly(ggplot)
+```
+
+
+## Alert level <span style="color: orange;">ORANGE</span>
+#### *Sequences with at least 1 MOC and 3 or more MOC & ROI*
+
+```{r orange table, echo=FALSE, message=FALSE, warning=FALSE}
+orange_table <- filter(samples, alert_level == 'orange') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+for (i in orange_table["ID"]) {
+  new <- str_remove_all(i, "%space%")
+  orange_table["ID"][orange_table["ID"] == i] <- new
+}
+
+for (i in orange_table["ListMutationsSelected_M"]){
+  new <- str_split(i, ",")
+  orange_table["ListMutationsSelected_M"][orange_table["ListMutationsSelected_M"] == i] <- new
+}
+  
+names(orange_table)[2] <- "Mutations"
+names(orange_table)[3] <- "Deletions"
+names(orange_table)[4] <- "Insertions"
+
+knitr::kable(orange_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
+```
+
+```{r orange heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+mut_freq <- rep(0, 566)
+for (i in orange_table["Mutations"]){
+  for(j in i){
+    ind <- as.integer(str_sub(j, 2, -2))
+    mut_freq[ind] <- mut_freq[ind] + 1
+  }
+}
+
+data <- data.frame(x = seq(1, 566), y = mut_freq)
+
+ggplot <- ggplot(data, aes(x=x, y=y)) +
+  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+  geom_point( color="orange", size=3 ) +
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank(),
+    aspect.ratio = 1/2
+  ) +
+  xlab("Amino Acid Position") +
+  ylab("Number of Mutations")
+
+ggplotly(ggplot)
+```
+
+
+## Alert level <span style="color: #FFEA00;">YELLOW</span>
+#### *Sequences with 0 MOC and 25 or more PM*
+#### *Sequences with 0 MOC and 8 or more ROI*
+
+```{r yellow table, echo=FALSE, message=FALSE, warning=FALSE}
+yellow_table <- filter(samples, alert_level == 'yellow') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+for (i in yellow_table["ID"]) {
+  new <- str_remove_all(i, "%space%")
+  yellow_table["ID"][yellow_table["ID"] == i] <- new
+}
+
+for (i in yellow_table["ListMutationsSelected_M"]){
+  new <- str_split(i, ",")
+  yellow_table["ListMutationsSelected_M"][yellow_table["ListMutationsSelected_M"] == i] <- new
+}
+  
+names(yellow_table)[2] <- "Mutations"
+names(yellow_table)[3] <- "Deletions"
+names(yellow_table)[4] <- "Insertions"
+
+knitr::kable(yellow_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
+```
+
+```{r yellow heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+mut_freq <- rep(0, 566)
+for (i in red_table["Mutations"]){
+  for(j in i){
+    ind <- as.integer(str_sub(j, 2, -2))
+    mut_freq[ind] <- mut_freq[ind] + 1
+  }
+}
+
+data <- data.frame(x = seq(1, 566), y = mut_freq)
+
+ggplot <- ggplot(data, aes(x=x, y=y)) +
+  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+  geom_point( color="#FFEA00", size=3 ) +
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank(),
+    aspect.ratio = 1/2
+  ) +
+  xlab("Amino Acid Position") +
+  ylab("Number of Mutations")
+
+ggplotly(ggplot)
+```
