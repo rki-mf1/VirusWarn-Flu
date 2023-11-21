@@ -8,10 +8,10 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { VOCAL_FLU } from './workflows/vocal_flu'
+include { FLUWARNSYSTEM } from './workflows/FluWarnSystem'
 
 workflow {
-    VOCAL_FLU ()
+    FLUWARNSYSTEM ()
 }
 
 /*

@@ -3,13 +3,14 @@ include { PSL }         from '../../modules/local/psl'
 include { ANNOTATION }  from '../../modules/local/annotation'
 include { REPORT }      from '../../modules/local/report'
 
-workflow VOCAL_FLOW {
+workflow FLUWARNSYSTEM_SUB {
     take:
         ref_nt
         ref_aa
         input_fasta
         mutation_table
         roi_table
+        rmd
 
     main:
         if (params.psl == 'y') {
@@ -23,7 +24,7 @@ workflow VOCAL_FLOW {
             "ERROR: $params.psl is an invalid input for the parameter psl!\n Please choose between yes/y and no/n!\n"
         }
 
-        REPORT ( ANNOTATION.out.variants_with_phenotypes )
+        REPORT ( ANNOTATION.out.variants_with_phenotypes, rmd )
 
     emit:
         report = REPORT.out.report

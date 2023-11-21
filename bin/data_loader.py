@@ -2,8 +2,6 @@
 
 """
 The data to load
-
-vocal-flu Version revised by @chkirschbaum
 """
 
 aminoacids = [

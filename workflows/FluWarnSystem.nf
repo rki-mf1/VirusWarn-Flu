@@ -25,7 +25,7 @@ if (parameter_diff.size() != 0){
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { VOCAL_FLOW } from '../subworkflows/local/sub_vocal'
+include { FLUWARNSYSTEM_SUB } from '../subworkflows/local/FluWarnSystem_sub'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,7 +33,7 @@ include { VOCAL_FLOW } from '../subworkflows/local/sub_vocal'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow VOCAL_FLU {
+workflow FLUWARNSYSTEM {
 
 //
 // LOAD REFERENCES AND TABLES for choosen Influenza subtype
@@ -71,8 +71,9 @@ if (params.subtype == 'H1N1' || 'h1n1') {
 // RUN VOCAL
 //
 input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
+rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
 
-VOCAL_FLOW ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table )
+FLUWARNSYSTEM_SUB ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table, rmd )
 
 }
 
