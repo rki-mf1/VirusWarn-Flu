@@ -39,25 +39,25 @@ workflow FLUWARNSYSTEM {
 // LOAD REFERENCES AND TABLES for choosen Influenza subtype
 //
 if (params.subtype == 'H1N1' || 'h1n1') {
-    log.info"INFO: VOCAL-Flu is running for Influenza A(H1N1)pdm09"
+    log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
     ref_nt = Channel.fromPath( file("data/A(H1N1)pdm09/A-Brisbane-2-2018_nucleotide.fa", checkIfExists: true) )
     ref_aa = Channel.fromPath( file("data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa", checkIfExists: true) )
     mutation_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_mutations_annotation.tsv", checkIfExists: true) )
     roi_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
 } else if (params.subtype == 'H3N2' || 'h3n2') {
-    log.info"INFO: VOCAL-Flu is running for Influenza A(H3N2)"
+    log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
     ref_nt = Channel.fromPath( file("data/A(H3N2)/A-Kansas-14-2017_nucleotide.fa", checkIfExists: true) )
     ref_aa = Channel.fromPath( file("data/A(H3N2)/A-Kansas-14-2017_protein.fa", checkIfExists: true) )
     mutation_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_mutations_annotation.tsv", checkIfExists: true) )
     roi_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
 } else if (params.subtype == 'Victoria' || 'victoria') {
-    log.info"INFO: VOCAL-Flu is running for Influenza B(Victoria)"
+    log.info"INFO: FluWarnSystem is running for Influenza B(Victoria)"
     ref_nt = Channel.fromPath( file("data/B(Victoria)/B-Brisbane-60-2008_nucleotide.fa", checkIfExists: true) )
     ref_aa = Channel.fromPath( file("data/B(Victoria)/B-Brisbane-60-2008_protein.fa", checkIfExists: true) )
     mutation_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_mutations_annotation.tsv", checkIfExists: true) )
     roi_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_roi.csv", checkIfExists: true) )
 } else if (params.subtype == 'Yamagata' || 'yamagata') {
-    log.info"INFO: VOCAL-Flu is running for Influenza B(Yamagata)"
+    log.info"INFO: FluWarnSystem is running for Influenza B(Yamagata)"
     ref_nt = Channel.fromPath( file("data/B(Yamagata)/B-Florida-4-2006_nucleotide.fa", checkIfExists: true) )
     ref_aa = Channel.fromPath( file("data/B(Yamagata)/B-Florida-4-2006_protein.fa", checkIfExists: true) )
     mutation_table = Channel.fromPath( file("data/B(Yamagata)/table_yamagata_mutations_annotation.tsv", checkIfExists: true) )
@@ -95,7 +95,7 @@ def helpMSG() {
     
     ${c_blue}Robert Koch Institute, MF1 Bioinformatics${c_reset}
 
-    Workflow: VOCAL-Flu
+    Workflow: FluWarnSystem
 
     ${c_yellow}Usage examples:${c_reset}
 

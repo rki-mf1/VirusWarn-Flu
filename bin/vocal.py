@@ -224,8 +224,24 @@ def main():
 
         if 'R' in query_seq: # IUPAC A or G
             query_seq = query_seq.replace('R', 'N')
+        elif 'Y' in query_seq: # IUPAC C or T
+            query_seq = query_seq.replace('Y', 'N')
         elif 'S' in query_seq: # IUPAC G or C
             query_seq = query_seq.replace('S', 'N')
+        elif 'W' in query_seq: # IUPAC A or T
+            query_seq = query_seq.replace('W', 'N')
+        elif 'K' in query_seq: # IUPAC G or T
+            query_seq = query_seq.replace('K', 'N')
+        elif 'M' in query_seq: # IUPAC A or C
+            query_seq = query_seq.replace('M', 'N')
+        elif 'B' in query_seq: # IUPAC G or C or T
+            query_seq = query_seq.replace('B', 'N')
+        elif 'D' in query_seq: # IUPAC A or G or T
+            query_seq = query_seq.replace('D', 'N')
+        elif 'H' in query_seq: # IUPAC A or C or T
+            query_seq = query_seq.replace('H', 'N')
+        elif 'V' in query_seq: # IUPAC A or G or C
+            query_seq = query_seq.replace('V', 'N')
         
         if nrecords % 100 == 0:
             print(f"Sequence number {nrecords+1}: {record.id}")
