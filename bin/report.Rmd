@@ -23,17 +23,20 @@ library(plotly)
 ```
 
 ```{r data, include=FALSE}
-#samples <- read.delim(params$alert_samples, sep = ',')
-#clusters <- read.delim(params$alert_clusters, sep = ',')
-samples <- read.delim("/Users/christinakirschbaum/Documents/GitHub/vocal-flu/results/03_report/fluwarnsystem-alerts-samples-all.csv", sep = ',')
-clusters <- read.delim("/Users/christinakirschbaum/Documents/GitHub/vocal-flu/results/03_report/fluwarnsystem-alerts-clusters-summaries-all.csv", sep = ',')
+samples <- read.delim(params$alert_samples, sep = ',')
+clusters <- read.delim(params$alert_clusters, sep = ',')
+```
+
+```{r seq total, echo=FALSE, message=FALSE, warning=FALSE}
+cat(paste0('> ', 'Sequences total: ', nrow(samples)))
 ```
 
 
-## Alert level <span style="color: red;">RED</span>
+
+## Alert level <span style="color: red;">RED</span> {.tabset .tabset-fade}
 #### *Sequences with at least 1 MOC and 5 or more MOC & ROI*
 
-```{r red table, echo=FALSE, message=FALSE, warning=FALSE}
+```{r red data, echo=FALSE, message=FALSE, warning=FALSE}
 red_table <- filter(samples, alert_level == 'red') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
@@ -51,24 +54,26 @@ names(red_table)[2] <- "Mutations"
 names(red_table)[3] <- "Deletions"
 names(red_table)[4] <- "Insertions"
 
-kbl(red_table, "html") %>%
-  #kable_material("striped") %>%
-  column_spec(2, width = "15cm") %>%
-  kable_styling() 
+cat(paste0('> ', 'Sequences in red alert level: ', nrow(red_table)))
 ```
 
-```{r red heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+### Lollipop Plot
+
+```{r red lollipop, echo=FALSE, message=FALSE, warning=FALSE}
 mut_freq <- rep(0, 566)
 for (i in red_table["Mutations"]){
   for(j in i){
+    # get number of mutations at every position
     ind <- as.integer(str_sub(j, 2, -2))
     mut_freq[ind] <- mut_freq[ind] + 1
+    # get list of mutations at every position
   }
 }
 
 data <- data.frame(x = seq(1, 566), y = mut_freq)
+plot.data <- data[which(data$y > 0),]
 
-ggplot <- ggplot(data, aes(x=x, y=y)) +
+ggplot <- ggplot(data[which(data$y > 0),], aes(x=x, y=y)) +
   geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
   geom_point( color="red", size=3 ) +
   theme_light() +
@@ -82,13 +87,28 @@ ggplot <- ggplot(data, aes(x=x, y=y)) +
   ylab("Number of Mutations")
 
 ggplotly(ggplot)
+
+#plot_ly(
+#  plot.data,
+#  hoverinfo='text',
+#  hovertext=~paste0("<b>AA Position: </b>", data$x, "<br><b># of Mutations: </b>", data$y)
+#)
+```
+
+### Table
+
+```{r red table, echo=FALSE, message=FALSE, warning=FALSE}
+kbl(red_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
 ```
 
 
-## Alert level <span style="color: orange;">ORANGE</span>
+## Alert level <span style="color: orange;">ORANGE</span> {.tabset .tabset-fade}
 #### *Sequences with at least 1 MOC and 3 or more MOC & ROI*
 
-```{r orange table, echo=FALSE, message=FALSE, warning=FALSE}
+```{r orange data, echo=FALSE, message=FALSE, warning=FALSE}
 orange_table <- filter(samples, alert_level == 'orange') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
@@ -106,13 +126,12 @@ names(orange_table)[2] <- "Mutations"
 names(orange_table)[3] <- "Deletions"
 names(orange_table)[4] <- "Insertions"
 
-knitr::kable(orange_table, "html") %>%
-  #kable_material("striped") %>%
-  column_spec(2, width = "15cm") %>%
-  kable_styling() 
+cat(paste0('> ', 'Sequences in orange alert level: ', nrow(orange_table)))
 ```
 
-```{r orange heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+### Lollipop Plot
+
+```{r orange lollipop, echo=FALSE, message=FALSE, warning=FALSE}
 mut_freq <- rep(0, 566)
 for (i in orange_table["Mutations"]){
   for(j in i){
@@ -123,7 +142,7 @@ for (i in orange_table["Mutations"]){
 
 data <- data.frame(x = seq(1, 566), y = mut_freq)
 
-ggplot <- ggplot(data, aes(x=x, y=y)) +
+ggplot <- ggplot(data[which(data$y > 0),], aes(x=x, y=y)) +
   geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
   geom_point( color="orange", size=3 ) +
   theme_light() +
@@ -139,12 +158,21 @@ ggplot <- ggplot(data, aes(x=x, y=y)) +
 ggplotly(ggplot)
 ```
 
+### Table
 
-## Alert level <span style="color: #FFEA00;">YELLOW</span>
+```{r orange table, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::kable(orange_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
+```
+
+
+## Alert level <span style="color: #FFEA00;">YELLOW</span> {.tabset .tabset-fade}
 #### *Sequences with 0 MOC and 25 or more PM*
 #### *Sequences with 0 MOC and 8 or more ROI*
 
-```{r yellow table, echo=FALSE, message=FALSE, warning=FALSE}
+```{r yellow data, echo=FALSE, message=FALSE, warning=FALSE}
 yellow_table <- filter(samples, alert_level == 'yellow') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
@@ -162,15 +190,14 @@ names(yellow_table)[2] <- "Mutations"
 names(yellow_table)[3] <- "Deletions"
 names(yellow_table)[4] <- "Insertions"
 
-knitr::kable(yellow_table, "html") %>%
-  #kable_material("striped") %>%
-  column_spec(2, width = "15cm") %>%
-  kable_styling() 
+cat(paste0('> ', 'Sequences in yellow alert level: ', nrow(yellow_table)))
 ```
 
-```{r yellow heatmap, echo=FALSE, message=FALSE, warning=FALSE}
+### Lollipop Plot
+
+```{r yellow lollipop, echo=FALSE, message=FALSE, warning=FALSE}
 mut_freq <- rep(0, 566)
-for (i in red_table["Mutations"]){
+for (i in yellow_table["Mutations"]){
   for(j in i){
     ind <- as.integer(str_sub(j, 2, -2))
     mut_freq[ind] <- mut_freq[ind] + 1
@@ -179,7 +206,7 @@ for (i in red_table["Mutations"]){
 
 data <- data.frame(x = seq(1, 566), y = mut_freq)
 
-ggplot <- ggplot(data, aes(x=x, y=y)) +
+ggplot <- ggplot(data[which(data$y > 0),], aes(x=x, y=y)) +
   geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
   geom_point( color="#FFEA00", size=3 ) +
   theme_light() +
@@ -193,4 +220,37 @@ ggplot <- ggplot(data, aes(x=x, y=y)) +
   ylab("Number of Mutations")
 
 ggplotly(ggplot)
+```
+
+### Table
+
+```{r yellow table, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::kable(yellow_table, "html") %>%
+  #kable_material("striped") %>%
+  column_spec(2, width = "15cm") %>%
+  kable_styling() 
+```
+
+
+## Alert level <span style="color: grey;">GREY</span>
+
+```{r grey data, echo=FALSE, message=FALSE, warning=FALSE}
+grey_table <- filter(samples, alert_level == 'grey') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+for (i in grey_table["ID"]) {
+  new <- str_remove_all(i, "%space%")
+  grey_table["ID"][grey_table["ID"] == i] <- new
+}
+
+for (i in grey_table["ListMutationsSelected_M"]){
+  new <- str_split(i, ",")
+  grey_table["ListMutationsSelected_M"][grey_table["ListMutationsSelected_M"] == i] <- new
+}
+  
+names(grey_table)[2] <- "Mutations"
+names(grey_table)[3] <- "Deletions"
+names(grey_table)[4] <- "Insertions"
+
+cat(paste0('> ', 'Sequences in grey alert level: ', nrow(grey_table)))
 ```

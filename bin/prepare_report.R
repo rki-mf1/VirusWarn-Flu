@@ -246,10 +246,16 @@ compute_alert_levels_v1 <- function(pheno_table_wide){
       s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
       alert_level =
        case_when(
-         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
-         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
-         (((s_moc_M + s_moc_D + s_moc_I) == 0) & ((s_roi_M + s_roi_D + s_roi_I) >= 8)) ~ "yellow", # accumulation alert roi
-         (((s_moc_M + s_moc_D + s_moc_I) == 0) & ((s_pm_M + s_pm_D + s_pm_I) >= 25)) ~ "yellow", # accumulation alert pm
+         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
+             (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
+         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
+             (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
+         (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+            ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
+            ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
+         (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+            ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
+            ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
          TRUE ~ "grey",
        ))
   return(pheno_table_wide_with_alert)
