@@ -192,8 +192,9 @@ var_pheno_score_summary = suppressMessages(
 alert_colors = c(
   "red" = "#FF2400",     # alert 
   "orange" = "orange",   # weak alert
-  "yellow" = "#FFEA00",   # accumulation alert
-  "grey" = "slategrey"  # no alert
+  "yellow" = "#FFEA00",  # accumulation alert
+  "grey" = "slategrey",  # sequencing error alert
+  "black" = "black"      # no alert
 )
 alert_level = factor(names(alert_colors), ordered = TRUE)
 
@@ -256,7 +257,9 @@ compute_alert_levels_v1 <- function(pheno_table_wide){
          (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
             ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
             ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
-         TRUE ~ "grey",
+         (((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
+           ((s_roi_M + s_roi_D + s_roi_I) >= 8)) ~ "grey",
+         TRUE ~ "black"
        ))
   return(pheno_table_wide_with_alert)
 }
@@ -274,7 +277,7 @@ write.table(
 mutations_per_alert_level = suppressMessages(
   var_pheno_summary_wide_with_alert  %>%
   ungroup() %>%
-  filter(alert_level != "grey") %>%
+  filter(alert_level != "black") %>%
   select(ID, alert_level) %>%
   distinct() %>% ## WARNING THIS IS A HOTFIX
   inner_join(var_pheno_wide_filter %>% ungroup() %>% select(ID, aa_pattern)) %>%
@@ -342,7 +345,7 @@ log_info("*** Writing Results ***")
 
 common_mutations_in_clusters = suppressMessages(
   samples_with_alert %>%
-  filter(alert_level != "grey") %>%
+  filter(alert_level != "black") %>%
   inner_join(var_pheno_wide_filter) %>%
   group_by(alert_level, cluster_ID_in_alert_level) %>%
   summarise(
