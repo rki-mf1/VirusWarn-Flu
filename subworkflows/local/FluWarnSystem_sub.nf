@@ -11,6 +11,7 @@ workflow FLUWARNSYSTEM_SUB {
         mutation_table
         roi_table
         rmd
+        metadata
 
     main:
         if (params.psl == 'y') {
@@ -24,7 +25,7 @@ workflow FLUWARNSYSTEM_SUB {
             "ERROR: $params.psl is an invalid input for the parameter psl!\n Please choose between yes/y and no/n!\n"
         }
 
-        REPORT ( ANNOTATION.out.variants_with_phenotypes, rmd )
+        REPORT ( ANNOTATION.out.variants_with_phenotypes, rmd, input_fasta, mutation_table, roi_table, metadata )
 
     emit:
         report = REPORT.out.report

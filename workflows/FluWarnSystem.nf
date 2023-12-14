@@ -9,7 +9,7 @@ if (params.help) { exit 0, helpMSG() }
 
 // Parameters sanity checking
 Set valid_params = ['cores', 'max_cores', 'memory', 'help',
-                    'fasta', 'subtype', 'psl',
+                    'fasta', 'metadata', 'subtype', 'psl',
                     'output', 'vocal_dir', 'annot_dir', 'report_dir', 'runinfo_dir',
                     'publish_dir_mode', 'conda_cache_dir',
                     'cloudProcess', 'cloud-process']
@@ -71,9 +71,16 @@ if (params.subtype == 'H1N1' || 'h1n1') {
 // RUN VOCAL
 //
 input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
+
+if (params.metadata != '') {
+    metadata = Channel.fromPath( file("${params.metadata}", checkIfExists: true) )
+} else {
+    metadata = params.metadata
+}
+
 rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
 
-FLUWARNSYSTEM_SUB ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table, rmd )
+FLUWARNSYSTEM_SUB ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table, rmd, metadata )
 
 }
 
