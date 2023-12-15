@@ -129,114 +129,124 @@ cat(paste0('> ', 'Sequences in red alert level: ', nrow(red_table)))
 ### Lollipop Plot
 
 ```{r red lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-mut_freq <- rep(0, 566)
-mut_list <- vector(mode = "character", length = 566)
-mut_list_unique <- vector(mode = "character", length = 566)
-
-for (i in red_table["Mutations"]){
-  for(j in i){
-    # get number of mutations at every position
-    ind <- as.integer(str_sub(j, 2, -2))
-    mut_freq[ind] <- mut_freq[ind] + 1
-    # get list of mutations at every position
-    mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-  }
-}
-
-pos <- 1
-for (i in mut_list){
-  split <- str_split_1(i, " ")
-  p <- 1
-  for (k in split){
-    if (grepl("\\*", k) == TRUE){
-      split[p] <- paste("\\", k, sep = "")
-      print(split[k])
+if (nrow(red_table) == 0){
+  cat("No sequences in alert level RED")
+} else {
+  mut_freq <- rep(0, 566)
+  mut_list <- vector(mode = "character", length = 566)
+  mut_list_unique <- vector(mode = "character", length = 566)
+  
+  for (i in red_table["Mutations"]){
+    for(j in i){
+      # get number of mutations at every position
+      ind <- as.integer(str_sub(j, 2, -2))
+      mut_freq[ind] <- mut_freq[ind] + 1
+      # get list of mutations at every position
+      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
     }
-    p <- p + 1
   }
-  unique_mut <- stri_unique(split)
-  for (j in unique_mut[-length(unique_mut)]){
-    count <- str_count(i, j)
-    mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+  
+  pos <- 1
+  for (i in mut_list){
+    split <- str_split_1(i, " ")
+    p <- 1
+    for (k in split){
+      if (grepl("\\*", k) == TRUE){
+        split[p] <- paste("\\", k, sep = "")
+        print(split[k])
+      }
+      p <- p + 1
+    }
+    unique_mut <- stri_unique(split)
+    for (j in unique_mut[-length(unique_mut)]){
+      count <- str_count(i, j)
+      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    }
+    pos <- pos + 1
   }
-  pos <- pos + 1
-}
-
-data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
-
-ggplot <- ggplot(
-  data[which(data$y > 0),], 
-  aes(
-    x=x, 
-    y=y, 
-    list=list, 
-    text=paste0(
-      "<b>AA Position: </b>", x, 
-      "<br><b># of Mutations: </b>", y, 
-      "<br><b>Mutations: </b>", list
+  
+  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
+  
+  ggplot <- ggplot(
+    data[which(data$y > 0),], 
+    aes(
+      x=x, 
+      y=y, 
+      list=list, 
+      text=paste0(
+        "<b>AA Position: </b>", x, 
+        "<br><b># of Mutations: </b>", y, 
+        "<br><b>Mutations: </b>", list
+        )
       )
-    )
-  ) +
-  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-  geom_point( color="red", size=3 ) +
-  theme_light() +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.x = element_blank()
-  ) +
-  xlab("Amino Acid Position") +
-  ylab("Number of Mutations") +
-  xlim(c(0,566))
-
-ggplotly(
-  ggplot,
-  tooltip = c("text")
-)
+    ) +
+    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+    geom_point( color="red", size=3 ) +
+    theme_light() +
+    theme(
+      panel.grid.major.x = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.x = element_blank()
+    ) +
+    xlab("Amino Acid Position") +
+    ylab("Number of Mutations") +
+    xlim(c(0,566))
+  
+  ggplotly(
+    ggplot,
+    tooltip = c("text")
+  )
+}
 ```
 
 ### Table
 
 ```{r red table, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in red_table_copy["Mutations"]){
-  new <- gsub(",([[:alpha:]])", ", \\1", i)
-  red_table_copy["Mutations"][red_table_copy["Mutations"] == i] <- new
-}
-
-subtype <- vector(mode = "character", length = length(red_table_copy$ID))
-seg <- vector(mode = "character", length = length(red_table_copy$ID))
+if (nrow(red_table) == 0){
+  cat("No sequences in alert level RED")
+} else {
+  for (i in red_table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    red_table_copy["Mutations"][red_table_copy["Mutations"] == i] <- new
+  }
   
-red_table_copy <- cbind(subtype, seg, red_table_copy)
+  subtype <- vector(mode = "character", length = length(red_table_copy$ID))
+  seg <- vector(mode = "character", length = length(red_table_copy$ID))
+    
+  red_table_copy <- cbind(subtype, seg, red_table_copy)
+    
+  names(red_table_copy)[1] <- "Subtype"
+  names(red_table_copy)[2] <- "Segment"
   
-names(red_table_copy)[1] <- "Subtype"
-names(red_table_copy)[2] <- "Segment"
-
-for (j in 1:length(red_table_copy$ID)){
-  red_table_copy$Subtype[j] <- str_split_i(red_table_copy$ID[j], "\\|", -1)
-  red_table_copy$Segment[j] <- str_split_i(red_table_copy$ID[j], "\\|", 2)
-}
-
-datatable(
-  red_table_copy, 
-  class = 'cell-border stripe', 
-  options = list(
-    dom = 'ftp', 
-    pageLength = 5,
-    searchHighlight = TRUE,
-    autoWidth= TRUE,
-    columnDefs = list(list(width = 500, targets = 4)),
-    initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-    "}")
+  for (j in 1:length(red_table_copy$ID)){
+    red_table_copy$Subtype[j] <- str_split_i(red_table_copy$ID[j], "\\|", -1)
+    red_table_copy$Segment[j] <- str_split_i(red_table_copy$ID[j], "\\|", 2)
+  }
+  
+  datatable(
+    red_table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'ftp', 
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 500, targets = 4)),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
   )
-)
+}
 ```
 
 ### Heatmap
 
 ```{r red heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-if (params$metadata == ""){
+if (nrow(red_table) == 0){
+  cat("No sequences in alert level RED")
+} else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the last weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
 } else {
@@ -322,114 +332,124 @@ cat(paste0('> ', 'Sequences in orange alert level: ', nrow(orange_table)))
 ### Lollipop Plot
 
 ```{r orange lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-mut_freq <- rep(0, 566)
-mut_list <- vector(mode = "character", length = 566)
-mut_list_unique <- vector(mode = "character", length = 566)
-
-for (i in orange_table["Mutations"]){
-  for(j in i){
-    # get number of mutations at every position
-    ind <- as.integer(str_sub(j, 2, -2))
-    mut_freq[ind] <- mut_freq[ind] + 1
-    # get list of mutations at every position
-    mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-  }
-}
-
-pos <- 1
-for (i in mut_list){
-  split <- str_split_1(i, " ")
-  p <- 1
-  for (k in split){
-    if (grepl("\\*", k) == TRUE){
-      split[p] <- paste("\\", k, sep = "")
-      print(split[k])
+if (nrow(orange_table) == 0){
+  cat("No sequences in alert level ORANGE")
+} else {
+  mut_freq <- rep(0, 566)
+  mut_list <- vector(mode = "character", length = 566)
+  mut_list_unique <- vector(mode = "character", length = 566)
+  
+  for (i in orange_table["Mutations"]){
+    for(j in i){
+      # get number of mutations at every position
+      ind <- as.integer(str_sub(j, 2, -2))
+      mut_freq[ind] <- mut_freq[ind] + 1
+      # get list of mutations at every position
+      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
     }
-    p <- p + 1
   }
-  unique_mut <- stri_unique(split)
-  for (j in unique_mut[-length(unique_mut)]){
-    count <- str_count(i, j)
-    mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+  
+  pos <- 1
+  for (i in mut_list){
+    split <- str_split_1(i, " ")
+    p <- 1
+    for (k in split){
+      if (grepl("\\*", k) == TRUE){
+        split[p] <- paste("\\", k, sep = "")
+        print(split[k])
+      }
+      p <- p + 1
+    }
+    unique_mut <- stri_unique(split)
+    for (j in unique_mut[-length(unique_mut)]){
+      count <- str_count(i, j)
+      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    }
+    pos <- pos + 1
   }
-  pos <- pos + 1
-}
-
-data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
-
-ggplot <- ggplot(
-  data[which(data$y > 0),], 
-  aes(
-    x=x, 
-    y=y, 
-    list=list, 
-    text=paste0(
-      "<b>AA Position: </b>", x, 
-      "<br><b># of Mutations: </b>", y, 
-      "<br><b>Mutations: </b>", list
+  
+  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
+  
+  ggplot <- ggplot(
+    data[which(data$y > 0),], 
+    aes(
+      x=x, 
+      y=y, 
+      list=list, 
+      text=paste0(
+        "<b>AA Position: </b>", x, 
+        "<br><b># of Mutations: </b>", y, 
+        "<br><b>Mutations: </b>", list
+        )
       )
-    )
-  ) +
-  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-  geom_point( color="orange", size=3 ) +
-  theme_light() +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.x = element_blank()
-  ) +
-  xlab("Amino Acid Position") +
-  ylab("Number of Mutations") +
-  xlim(c(0,566))
-
-ggplotly(
-  ggplot,
-  tooltip = c("text")
-)
+    ) +
+    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+    geom_point( color="orange", size=3 ) +
+    theme_light() +
+    theme(
+      panel.grid.major.x = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.x = element_blank()
+    ) +
+    xlab("Amino Acid Position") +
+    ylab("Number of Mutations") +
+    xlim(c(0,566))
+  
+  ggplotly(
+    ggplot,
+    tooltip = c("text")
+  )
+}
 ```
 
 ### Table
 
 ```{r orange table, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in orange_table_copy["Mutations"]){
-  new <- gsub(",([[:alpha:]])", ", \\1", i)
-  orange_table_copy["Mutations"][orange_table_copy["Mutations"] == i] <- new
-}
-
-subtype <- vector(mode = "character", length = length(orange_table_copy$ID))
-seg <- vector(mode = "character", length = length(orange_table_copy$ID))
+if (nrow(orange_table) == 0){
+  cat("No sequences in alert level ORANGE")
+} else {
+  for (i in orange_table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    orange_table_copy["Mutations"][orange_table_copy["Mutations"] == i] <- new
+  }
   
-orange_table_copy <- cbind(subtype, seg, orange_table_copy)
+  subtype <- vector(mode = "character", length = length(orange_table_copy$ID))
+  seg <- vector(mode = "character", length = length(orange_table_copy$ID))
+    
+  orange_table_copy <- cbind(subtype, seg, orange_table_copy)
+    
+  names(orange_table_copy)[1] <- "Subtype"
+  names(orange_table_copy)[2] <- "Segment"
   
-names(orange_table_copy)[1] <- "Subtype"
-names(orange_table_copy)[2] <- "Segment"
-
-for (j in 1:length(orange_table_copy$ID)){
-  orange_table_copy$Subtype[j] <- str_split_i(orange_table_copy$ID[j], "\\|", -1)
-  orange_table_copy$Segment[j] <- str_split_i(orange_table_copy$ID[j], "\\|", 2)
-}
-
-datatable(
-  orange_table_copy, 
-  class = 'cell-border stripe', 
-  options = list(
-    dom = 'ftp', 
-    pageLength = 5,
-    searchHighlight = TRUE,
-    autoWidth= TRUE,
-    columnDefs = list(list(width = 500, targets = 4)),
-    initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-    "}")
+  for (j in 1:length(orange_table_copy$ID)){
+    orange_table_copy$Subtype[j] <- str_split_i(orange_table_copy$ID[j], "\\|", -1)
+    orange_table_copy$Segment[j] <- str_split_i(orange_table_copy$ID[j], "\\|", 2)
+  }
+  
+  datatable(
+    orange_table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'ftp', 
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 500, targets = 4)),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
   )
-)
+}
 ```
 
 ### Heatmap
 
 ```{r orange heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-if (params$metadata == ""){
+if (nrow(orange_table) == 0){
+  cat("No sequences in alert level ORANGE")
+} else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the last weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
 } else {
@@ -516,113 +536,123 @@ cat(paste0('> ', 'Sequences in yellow alert level: ', nrow(yellow_table)))
 ### Lollipop Plot
 
 ```{r yellow lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-mut_freq <- rep(0, 566)
-mut_list <- vector(mode = "character", length = 566)
-mut_list_unique <- vector(mode = "character", length = 566)
-
-for (i in yellow_table["Mutations"]){
-  for(j in i){
-    # get number of mutations at every position
-    ind <- as.integer(str_sub(j, 2, -2))
-    mut_freq[ind] <- mut_freq[ind] + 1
-    # get list of mutations at every position
-    mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-  }
-}
-
-pos <- 1
-for (i in mut_list){
-  split <- str_split_1(i, " ")
-  p <- 1
-  for (k in split){
-    if (grepl("\\*", k) == TRUE){
-      split[p] <- paste("\\", k, sep = "")
+if (nrow(yellow_table) == 0){
+  cat("No sequences in alert level YELLOW")
+} else {
+  mut_freq <- rep(0, 566)
+  mut_list <- vector(mode = "character", length = 566)
+  mut_list_unique <- vector(mode = "character", length = 566)
+  
+  for (i in yellow_table["Mutations"]){
+    for(j in i){
+      # get number of mutations at every position
+      ind <- as.integer(str_sub(j, 2, -2))
+      mut_freq[ind] <- mut_freq[ind] + 1
+      # get list of mutations at every position
+      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
     }
-    p <- p + 1
   }
-  unique_mut <- stri_unique(split)
-  for (j in unique_mut[-length(unique_mut)]){
-    count <- str_count(i, j)
-    mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+  
+  pos <- 1
+  for (i in mut_list){
+    split <- str_split_1(i, " ")
+    p <- 1
+    for (k in split){
+      if (grepl("\\*", k) == TRUE){
+        split[p] <- paste("\\", k, sep = "")
+      }
+      p <- p + 1
+    }
+    unique_mut <- stri_unique(split)
+    for (j in unique_mut[-length(unique_mut)]){
+      count <- str_count(i, j)
+      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    }
+    pos <- pos + 1
   }
-  pos <- pos + 1
-}
-
-data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
-
-ggplot <- ggplot(
-  data[which(data$y > 0),], 
-  aes(
-    x=x, 
-    y=y, 
-    list=list, 
-    text=paste0(
-      "<b>AA Position: </b>", x, 
-      "<br><b># of Mutations: </b>", y, 
-      "<br><b>Mutations: </b>", list
+  
+  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
+  
+  ggplot <- ggplot(
+    data[which(data$y > 0),], 
+    aes(
+      x=x, 
+      y=y, 
+      list=list, 
+      text=paste0(
+        "<b>AA Position: </b>", x, 
+        "<br><b># of Mutations: </b>", y, 
+        "<br><b>Mutations: </b>", list
+        )
       )
-    )
-  ) +
-  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-  geom_point( color="#FFEA00", size=3 ) +
-  theme_light() +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.x = element_blank()  
-  ) +
-  xlab("Amino Acid Position") +
-  ylab("Number of Mutations") +
-  xlim(c(0,566))
-
-ggplotly(
-  ggplot,
-  tooltip = c("text")
-)
+    ) +
+    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+    geom_point( color="#FFEA00", size=3 ) +
+    theme_light() +
+    theme(
+      panel.grid.major.x = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.x = element_blank()  
+    ) +
+    xlab("Amino Acid Position") +
+    ylab("Number of Mutations") +
+    xlim(c(0,566))
+  
+  ggplotly(
+    ggplot,
+    tooltip = c("text")
+  )
+}
 ```
 
 ### Table
 
 ```{r yellow table, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in yellow_table_copy["Mutations"]){
-  new <- gsub(",([[:alpha:]])", ", \\1", i)
-  yellow_table_copy["Mutations"][yellow_table_copy["Mutations"] == i] <- new
-}
-
-subtype <- vector(mode = "character", length = length(yellow_table_copy$ID))
-seg <- vector(mode = "character", length = length(yellow_table_copy$ID))
+if (nrow(yellow_table) == 0){
+  cat("No sequences in alert level YELLOW")
+} else {
+  for (i in yellow_table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    yellow_table_copy["Mutations"][yellow_table_copy["Mutations"] == i] <- new
+  }
   
-yellow_table_copy <- cbind(subtype, seg, yellow_table_copy)
+  subtype <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  seg <- vector(mode = "character", length = length(yellow_table_copy$ID))
+    
+  yellow_table_copy <- cbind(subtype, seg, yellow_table_copy)
+    
+  names(yellow_table_copy)[1] <- "Subtype"
+  names(yellow_table_copy)[2] <- "Segment"
   
-names(yellow_table_copy)[1] <- "Subtype"
-names(yellow_table_copy)[2] <- "Segment"
-
-for (j in 1:length(yellow_table_copy$ID)){
-  yellow_table_copy$Subtype[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", -1)
-  yellow_table_copy$Segment[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", 2)
-}
-
-datatable(
-  yellow_table_copy, 
-  class = 'cell-border stripe', 
-  options = list(
-    dom = 'ftp', 
-    pageLength = 5,
-    searchHighlight = TRUE,
-    autoWidth= TRUE,
-    columnDefs = list(list(width = 500, targets = 4)),
-    initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-    "}")
+  for (j in 1:length(yellow_table_copy$ID)){
+    yellow_table_copy$Subtype[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", -1)
+    yellow_table_copy$Segment[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", 2)
+  }
+  
+  datatable(
+    yellow_table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'ftp', 
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 500, targets = 4)),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
   )
-)
+}
 ```
 
 ### Heatmap
 
 ```{r yellow heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-if (params$metadata == ""){
+if (nrow(yellow_table) == 0){
+  cat("No sequences in alert level YELLOW")
+} else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the last weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
 } else {
@@ -708,114 +738,124 @@ cat(paste0('> ', 'Sequences in grey alert level: ', nrow(grey_table)))
 ### Lollipop Plot
 
 ```{r grey lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-mut_freq <- rep(0, 566)
-mut_list <- vector(mode = "character", length = 566)
-mut_list_unique <- vector(mode = "character", length = 566)
-
-for (i in grey_table["Mutations"]){
-  for(j in i){
-    # get number of mutations at every position
-    ind <- as.integer(str_sub(j, 2, -2))
-    mut_freq[ind] <- mut_freq[ind] + 1
-    # get list of mutations at every position
-    mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-  }
-}
-
-pos <- 1
-for (i in mut_list){
-  split <- str_split_1(i, " ")
-  p <- 1
-  for (k in split){
-    if (grepl("\\*", k) == TRUE){
-      split[p] <- paste("\\", k, sep = "")
-      print(split[k])
+if (nrow(grey_table) == 0){
+  cat("No sequences in alert level GREY")
+} else {
+  mut_freq <- rep(0, 566)
+  mut_list <- vector(mode = "character", length = 566)
+  mut_list_unique <- vector(mode = "character", length = 566)
+  
+  for (i in grey_table["Mutations"]){
+    for(j in i){
+      # get number of mutations at every position
+      ind <- as.integer(str_sub(j, 2, -2))
+      mut_freq[ind] <- mut_freq[ind] + 1
+      # get list of mutations at every position
+      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
     }
-    p <- p + 1
   }
-  unique_mut <- stri_unique(split)
-  for (j in unique_mut[-length(unique_mut)]){
-    count <- str_count(i, j)
-    mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+  
+  pos <- 1
+  for (i in mut_list){
+    split <- str_split_1(i, " ")
+    p <- 1
+    for (k in split){
+      if (grepl("\\*", k) == TRUE){
+        split[p] <- paste("\\", k, sep = "")
+        print(split[k])
+      }
+      p <- p + 1
+    }
+    unique_mut <- stri_unique(split)
+    for (j in unique_mut[-length(unique_mut)]){
+      count <- str_count(i, j)
+      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    }
+    pos <- pos + 1
   }
-  pos <- pos + 1
-}
-
-data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
-
-ggplot <- ggplot(
-  data[which(data$y > 0),], 
-  aes(
-    x=x, 
-    y=y, 
-    list=list, 
-    text=paste0(
-      "<b>AA Position: </b>", x, 
-      "<br><b># of Mutations: </b>", y, 
-      "<br><b>Mutations: </b>", list
+  
+  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
+  
+  ggplot <- ggplot(
+    data[which(data$y > 0),], 
+    aes(
+      x=x, 
+      y=y, 
+      list=list, 
+      text=paste0(
+        "<b>AA Position: </b>", x, 
+        "<br><b># of Mutations: </b>", y, 
+        "<br><b>Mutations: </b>", list
+        )
       )
-    )
-  ) +
-  geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-  geom_point( color="lightgrey", size=3 ) +
-  theme_light() +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.x = element_blank(),
-  ) +
-  xlab("Amino Acid Position") +
-  ylab("Number of Mutations") +
-  xlim(c(0,566))
-
-ggplotly(
-  ggplot,
-  tooltip = c("text")
-)
+    ) +
+    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+    geom_point( color="lightgrey", size=3 ) +
+    theme_light() +
+    theme(
+      panel.grid.major.x = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.x = element_blank(),
+    ) +
+    xlab("Amino Acid Position") +
+    ylab("Number of Mutations") +
+    xlim(c(0,566))
+  
+  ggplotly(
+    ggplot,
+    tooltip = c("text")
+  )
+}
 ```
 
 ### Table
 
 ```{r grey table, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in grey_table_copy["Mutations"]){
-  new <- gsub(",([[:alpha:]])", ", \\1", i)
-  grey_table_copy["Mutations"][grey_table_copy["Mutations"] == i] <- new
-}
-
-subtype <- vector(mode = "character", length = length(grey_table_copy$ID))
-seg <- vector(mode = "character", length = length(grey_table_copy$ID))
+if (nrow(grey_table) == 0){
+  cat("No sequences in alert level GREY")
+} else {
+  for (i in grey_table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    grey_table_copy["Mutations"][grey_table_copy["Mutations"] == i] <- new
+  }
   
-grey_table_copy <- cbind(subtype, seg, grey_table_copy)
+  subtype <- vector(mode = "character", length = length(grey_table_copy$ID))
+  seg <- vector(mode = "character", length = length(grey_table_copy$ID))
+    
+  grey_table_copy <- cbind(subtype, seg, grey_table_copy)
+    
+  names(grey_table_copy)[1] <- "Subtype"
+  names(grey_table_copy)[2] <- "Segment"
   
-names(grey_table_copy)[1] <- "Subtype"
-names(grey_table_copy)[2] <- "Segment"
-
-for (j in 1:length(grey_table_copy$ID)){
-  grey_table_copy$Subtype[j] <- str_split_i(grey_table_copy$ID[j], "\\|", -1)
-  grey_table_copy$Segment[j] <- str_split_i(grey_table_copy$ID[j], "\\|", 2)
-}
-
-datatable(
-  grey_table_copy, 
-  class = 'cell-border stripe', 
-  options = list(
-    dom = 'ftp', 
-    pageLength = 5,
-    searchHighlight = TRUE,
-    autoWidth= TRUE,
-    columnDefs = list(list(width = 500, targets = 4)),
-    initComplete = JS(
-    "function(settings, json) {",
-    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-    "}")
+  for (j in 1:length(grey_table_copy$ID)){
+    grey_table_copy$Subtype[j] <- str_split_i(grey_table_copy$ID[j], "\\|", -1)
+    grey_table_copy$Segment[j] <- str_split_i(grey_table_copy$ID[j], "\\|", 2)
+  }
+  
+  datatable(
+    grey_table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'ftp', 
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 500, targets = 4)),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
   )
-)
+}
 ```
 
 ### Heatmap
 
 ```{r grey heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-if (params$metadata == ""){
+if (nrow(grey_table) == 0){
+  cat("No sequences in alert level GREY")
+} else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the last weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
 } else {
