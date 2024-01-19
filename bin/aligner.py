@@ -12,11 +12,10 @@ import parasail
 
 
 """
-
 Parasail part
 Slightly modified version taken from dev/covsonar2-alpha covsonar/src/covsonar/align.py
-@stephan-fuchs
 
+@stephan-fuchs
 """
 
 def parasail_align(

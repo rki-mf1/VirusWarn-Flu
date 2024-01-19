@@ -49,7 +49,7 @@ args_tester <- function(args){
     print_help(parser)
     stop("At least one argument must be supplied.")
     exit()
-  }else if (is.null(args$file_variant_table)){
+  } else if (is.null(args$file_variant_table)) {
     print_help(parser)
     stop("Require --file_variant_table")
     exit()
