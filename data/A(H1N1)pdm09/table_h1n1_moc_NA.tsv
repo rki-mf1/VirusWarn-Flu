@@ -1,0 +1,4 @@
+gene	amino acid	type	ID	comment	source
+NA	H275Y	MutationOfConcern	NA	Oseltamivir resistance	doi:10.1371/journal.pone.0016087, doi: 10.1128/JVI.00936-10
+NA	S286G	MutationOfConcern	NA	Increase severe disease, with co-variation PB1-K480R	doi:10.1371/journal.pone.0016087
+NA	N295S	MutationOfConcern	NA	Alter oseltamivir susceptibility	doi: 10.1128/JVI.00936-10

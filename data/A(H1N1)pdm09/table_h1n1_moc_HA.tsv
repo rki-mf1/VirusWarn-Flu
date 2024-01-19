@@ -40,6 +40,3 @@ HA	C326P327insR	MutationOfConcern	NA	Poly-basic cleavage, increase pathogenicity
 HA	E374K	MutationOfConcern	NA	Vaccination breakthrough	doi: 10.1007/s00430-013-0291-4
 HA	E391K	MutationOfConcern	NA	Increase spread, vaccination failure	doi: 10.1128/JVI.00936-10
 HA	R494K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
-NA	H275Y	MutationOfConcern	NA	Oseltamivir resistance	doi:10.1371/journal.pone.0016087, doi: 10.1128/JVI.00936-10
-NA	S286G	MutationOfConcern	NA	Increase severe disease, with co-variation PB1-K480R	doi:10.1371/journal.pone.0016087
-NA	N295S	MutationOfConcern	NA	Alter oseltamivir susceptibility	doi: 10.1128/JVI.00936-10
