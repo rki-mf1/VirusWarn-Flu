@@ -9,7 +9,7 @@ process ANNOTATION {
         path roi_table
 
     output:
-        path "variants_with_phenotypes.tsv",   emit: variants_with_phenotypes
+        path "variants_with_phenotypes.tsv",   emit: variants_phenotypes
 
     script:
     """

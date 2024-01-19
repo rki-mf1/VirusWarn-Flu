@@ -225,8 +225,8 @@ def correct_truncations(
 
     return nt_ref_seq, nt_query_seq
 
-
-def check_gap_boundaries(ref, query, max_deletion_size=10):
+# VOCAL max_deletion_size = 10
+def check_gap_boundaries(ref, query, max_deletion_size=4):
     """
     str * str * int -> str * str
     from two sequences ref and query aligned (of same length), detects the positions with
@@ -236,7 +236,7 @@ def check_gap_boundaries(ref, query, max_deletion_size=10):
     """
     if len(ref) != len(query):
         warnings.warn(
-            f"sequences are not of same length when checking gap boundaries, diff: {len(ref) - len(query)}"
+            f"Sequences are not of same length when checking gap boundaries, diff: {len(ref) - len(query)}"
         )
     deletions = runs_of_ones([int(s == "-") for s in query])
     ##The only time when we can improve the alignment next to a deletion will be if one of the

@@ -94,7 +94,12 @@ if (params$metadata != ""){
 }
 ```
 
+```{r remove, include=FALSE}
+fasta <- fasta[!names(fasta) %in% c('OFL546232 | HA | A/India/Alp1410359/2014 | OFL_ISL_131148 | KR052614 | H1N1', 'OFL3839 | HA | A/Germany/767/95 | OFL_ISL_789 | AF008754 | H3N2')]
 
+samples <- samples %>%
+  filter(!ID %in% c('OFL546232%space%|%space%HA%space%|%space%A/India/Alp1410359/2014%space%|%space%OFL_ISL_131148%space%|%space%KR052614%space%|%space%H1N1', 'OFL3839%space%|%space%HA%space%|%space%A/Germany/767/95%space%|%space%OFL_ISL_789%space%|%space%AF008754%space%|%space%H3N2'))
+```
 
 
 <a id="item-zero"></a>

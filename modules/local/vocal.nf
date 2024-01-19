@@ -6,7 +6,7 @@ process VOCAL {
     input:
         path input_fasta
         path ref_nt
-        path ref_aa
+        path control
 
     output:
         path "variant_table.tsv",   emit: variant_table
@@ -17,8 +17,10 @@ process VOCAL {
 
     vocal.py \
         -i ${input_fasta} \
-        --ref_nt ${ref_nt} \
-        --ref_aa ${ref_aa} \
+        -r ${ref_nt} \
+        --control ${control} \
+        --complete ${params.complete} \
+        -n ${params.n} \
         -o "variant_table.tsv"
     """
 

@@ -9,8 +9,10 @@ if (params.help) { exit 0, helpMSG() }
 
 // Parameters sanity checking
 Set valid_params = ['cores', 'max_cores', 'memory', 'help',
-                    'fasta', 'metadata', 'subtype', 'psl',
-                    'output', 'vocal_dir', 'annot_dir', 'report_dir', 'runinfo_dir',
+                    'fasta', 'refh1n1', 'refh3n2', 'metadata', 'subtype', 
+                    'psl', 'split', 'complete', 'n',
+                    'output', 'split_dir', 'vocal_dir', 
+                    'annot_dir', 'report_dir', 'runinfo_dir',
                     'publish_dir_mode', 'conda_cache_dir',
                     'cloudProcess', 'cloud-process']
 
@@ -26,6 +28,7 @@ if (parameter_diff.size() != 0){
 */
 
 include { FLUWARNSYSTEM_SUB } from '../subworkflows/local/FluWarnSystem_sub'
+include { FLUWARNSYSTEM_SPLIT } from '../subworkflows/local/FluWarnSystem_split'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,52 +38,83 @@ include { FLUWARNSYSTEM_SUB } from '../subworkflows/local/FluWarnSystem_sub'
 
 workflow FLUWARNSYSTEM {
 
-//
-// LOAD REFERENCES AND TABLES for choosen Influenza subtype
-//
-if (params.subtype == 'H1N1' || 'h1n1') {
-    log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
-    ref_nt = Channel.fromPath( file("data/A(H1N1)pdm09/A-Brisbane-2-2018_nucleotide.fa", checkIfExists: true) )
-    ref_aa = Channel.fromPath( file("data/A(H1N1)pdm09/A-Brisbane-2-2018_protein.fa", checkIfExists: true) )
-    mutation_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_mutations_annotation.tsv", checkIfExists: true) )
-    roi_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
-} else if (params.subtype == 'H3N2' || 'h3n2') {
-    log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
-    ref_nt = Channel.fromPath( file("data/A(H3N2)/A-Kansas-14-2017_nucleotide.fa", checkIfExists: true) )
-    ref_aa = Channel.fromPath( file("data/A(H3N2)/A-Kansas-14-2017_protein.fa", checkIfExists: true) )
-    mutation_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_mutations_annotation.tsv", checkIfExists: true) )
-    roi_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
-} else if (params.subtype == 'Victoria' || 'victoria') {
-    log.info"INFO: FluWarnSystem is running for Influenza B(Victoria)"
-    ref_nt = Channel.fromPath( file("data/B(Victoria)/B-Brisbane-60-2008_nucleotide.fa", checkIfExists: true) )
-    ref_aa = Channel.fromPath( file("data/B(Victoria)/B-Brisbane-60-2008_protein.fa", checkIfExists: true) )
-    mutation_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_mutations_annotation.tsv", checkIfExists: true) )
-    roi_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_roi.csv", checkIfExists: true) )
-} else if (params.subtype == 'Yamagata' || 'yamagata') {
-    log.info"INFO: FluWarnSystem is running for Influenza B(Yamagata)"
-    ref_nt = Channel.fromPath( file("data/B(Yamagata)/B-Florida-4-2006_nucleotide.fa", checkIfExists: true) )
-    ref_aa = Channel.fromPath( file("data/B(Yamagata)/B-Florida-4-2006_protein.fa", checkIfExists: true) )
-    mutation_table = Channel.fromPath( file("data/B(Yamagata)/table_yamagata_mutations_annotation.tsv", checkIfExists: true) )
-    roi_table = Channel.fromPath( file("data/B(Yamagata)/table_yamagata_roi.csv", checkIfExists: true) )
-} else {
-    exit 1, 
-    "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between H1N1, H3N2, Victoria and Yamagata!\n"
-}
+    input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
 
-//
-// RUN VOCAL
-//
-input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
+    if (params.refh1n1 != '') {
+        ref_h1n1 = Channel.fromPath( file("${params.refh1n1}", checkIfExists: true) )
+    } else {
+        ref_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/HA_MW626062-1.fasta", checkIfExists: true) )
+    }
+    control_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/HA_moc_roi_seq.fasta", checkIfExists: true) )
+    moc_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+    roi_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )     
 
-if (params.metadata != '') {
-    metadata = Channel.fromPath( file("${params.metadata}", checkIfExists: true) )
-} else {
-    metadata = params.metadata
-}
+    if (params.refh3n2 != '') {
+        ref_h3n2 = Channel.fromPath( file("${params.refh3n2}", checkIfExists: true) )
+    } else {
+        ref_h3n2 = Channel.fromPath( file("data/A(H3N2)/HA_EPI1857216.fasta", checkIfExists: true) )
+    }
+    control_h3n2 = Channel.fromPath( file("data/A(H3N2)/HA_moc_roi_seq.fasta", checkIfExists: true) )
+    moc_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_moc_HA.tsv", checkIfExists: true) )
+    roi_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
 
-rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
+    rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
 
-FLUWARNSYSTEM_SUB ( ref_nt, ref_aa, input_fasta, mutation_table, roi_table, rmd, metadata )
+    if (params.metadata != '') {
+        metadata = Channel.fromPath( file("${params.metadata}", checkIfExists: true) )
+    } else {
+        metadata = params.metadata
+    }
+
+    if (params.split == ''){
+
+        if (params.subtype == 'H1N1' || 'h1n1') {
+            log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
+            ref_nt = ref_h1n1
+            control = control_h1n1
+            mutation_table = moc_table_h1n1
+            roi_table = roi_table_h1n1
+        } else if (params.subtype == 'H3N2' || 'h3n2') {
+            log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
+            ref_nt = ref_h3n2
+            control = control_h3n2
+            mutation_table = moc_table_h3n2
+            roi_table = roi_table_h3n2
+        //} else if (params.subtype == 'Victoria' || 'victoria' || 'Vic' || 'vic') {
+            //log.info"INFO: FluWarnSystem is running for Influenza B(Victoria)"
+            //ref_nt = Channel.fromPath( file("data/B(Victoria)/HA_KX058884-1.fasta", checkIfExists: true) )
+            //mutation_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_moc_HA.tsv", checkIfExists: true) )
+            //roi_table = Channel.fromPath( file("data/B(Victoria)/table_victoria_roi.csv", checkIfExists: true) )
+        //} else if (params.subtype == 'Yamagata' || 'yamagata' || 'Yam' || 'yam') {
+            //log.info"INFO: FluWarnSystem is running for Influenza B(Yamagata)"
+            //ref_nt = Channel.fromPath( file("data/B(Yamagata)/HA_JN993010-1.fasta", checkIfExists: true) )
+            //mutation_table = Channel.fromPath( file("data/B(Yamagata)/table_yamagata_moc_HA.tsv", checkIfExists: true) )
+            //roi_table = Channel.fromPath( file("data/B(Yamagata)/table_yamagata_roi.csv", checkIfExists: true) )
+        } else {
+            exit 1, 
+            "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between H1N1, H3N2, Victoria and Yamagata!\n"
+        }
+
+        FLUWARNSYSTEM_SUB ( ref_nt, input_fasta, control, mutation_table, roi_table, rmd, metadata )
+
+    } else if (params.split == 'FluPipe' || 'flupipe' || 'GISAID' || 'gisaid' || 'OpenFlu' || 'openflu') {
+
+        if (params.psl == true) {
+            exit 1, 
+            "ERROR: $params.psl is an invalid input for the parameter split!\n Please choose between FluPipe, GISAID and OpenFlu!\n"
+        }
+
+        FLUWARNSYSTEM_SPLIT ( 
+            input_fasta, 
+            ref_h1n1, control_h1n1, moc_table_h1n1, roi_table_h1n1,
+            ref_h3n2, control_h3n2, moc_table_h3n2, roi_table_h3n2, 
+            rmd, metadata 
+        )
+
+    } else {
+        exit 1, 
+            "ERROR: $params.split is an invalid input for the parameter split!\n Please choose between FluPipe, GISAID and OpenFlu!\n"
+    }
 
 }
 
@@ -107,12 +141,37 @@ def helpMSG() {
     ${c_yellow}Usage examples:${c_reset}
 
     ${c_yellow}Input options:${c_reset}
-    ${c_green} --subtype ${c_reset}         Define the subtype of the input sequences to choose the right references and tables.
+    ${c_green} --fasta ${c_reset}           REQUIRED! Path to the input fasta file.
+                                            [ default: $params.fasta ]
+    ${c_green} --refh1n1 ${c_reset}         Path to the reference sequence for H1N1.
+                                            Otherwise A/Wisconsin/588/2019 (MW626062.1) is used.
+                                            [ default: $params.refh1n1 ]
+    ${c_green} --refh3n2 ${c_reset}         Path to the reference sequence for H3N2.
+                                            Otherwise A/Darwin/6/2021 (EPI_ISL_1563628) is used.
+                                            [ default: $params.refh3n2 ]
+    ${c_green} --metadata ${c_reset}        The path to a metadata file in GISAID form for the sequences with 
+                                            collection dates.
+                                            Required to generate a heatmap in the report.
+                                            [ default: $params.metadata ]
+    ${c_green} --subtype ${c_reset}         If the input fasta file only contains sequences of one subtype, 
+                                            define the subtype to choose the right references and tables.
                                             Options for Influenza A: 'H1N1' and 'H3N2'
                                             Options for Influenza B: 'Victoria' and 'Yamagata'
                                             [ default: $params.subtype ]
     ${c_green} --psl ${c_reset}             Run process with ('y') or without ('n') psl format.
                                             [ default: $params.psl ]
+    ${c_green} --split ${c_reset}           If the input fasta file contains sequences of more than one subtype, 
+                                            enable the split parameter to write them into one file per subtype and 
+                                            ensure the use of the right references and tables.
+                                            Options: 'FluPipe', 'GISAID' and 'OpenFlu'
+                                            [ default: $params.split ]
+    ${c_green} --complete ${c_reset}        FluWarnSystem only considers sequences within a defined range of length
+                                            and writes the rest into incomplete_seq.fasta if set to 'y'.
+                                            If set to 'n', all sequences are considered.
+                                            [ default: $params.complete ]
+    ${c_green} --n ${c_reset}               Number of nucleotides a sequence can differ from the length of 
+                                            the reference sequence to be considered as complete.
+                                            [ default: $params.n ]
 
     ${c_yellow}Computing options:${c_reset}
     --cores                  Max cores per process for local use [default: $params.cores]

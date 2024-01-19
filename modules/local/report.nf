@@ -4,30 +4,31 @@ process REPORT {
     publishDir "${params.output}/${params.report_dir}", mode: params.publish_dir_mode
 
     input:
-        path variants_with_phenotypes
+        path variants_phenotypes
         path rmd
         path input_fasta
         path mutation_table
         path roi_table
         val metadata
+        val output
 
     output:
         path "fluwarnsystem-alerts-samples-all.csv",                emit: alerts_samples
         path "fluwarnsystem-alerts-clusters-summaries-all.csv",     emit: alerts_clusters
-        path "fluwarnsystem-report.html",                           emit: report
+        path "${output}",                                           emit: report
 
     script:
     """
     echo "Step 3: Detect and alert emerging variants"
 
     prepare_report.R \
-        -f ${variants_with_phenotypes} \
+        -f ${variants_phenotypes} \
         -s "fluwarnsystem-alerts-samples-all.csv" \
         -c "fluwarnsystem-alerts-clusters-summaries-all.csv"
 
     Rscript --vanilla -e \
         "rmarkdown::render(input = \'${rmd}\', \\
-        output_file = \'fluwarnsystem-report.html\', \\
+        output_file = \'${output}\', \\
         params = list(
             fasta = \'${input_fasta}\', \\
             metadata = \'${metadata}\', \\

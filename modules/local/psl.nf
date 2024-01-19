@@ -5,8 +5,8 @@ process PSL {
 
     input:
         path ref_nt
-        path ref_aa
         path input_fasta
+        path control
 
     output:
         path "variant_table.tsv",   emit: variant_table
@@ -22,8 +22,8 @@ process PSL {
 
     vocal.py \
         -i ${input_fasta} \
-        --ref_nt ${ref_nt} \
-        --ref_aa ${ref_aa} \
+        -r ${ref_nt} \
+        --control ${control} \
         --PSL "output_psl" \
         -o "variant_table.tsv"
     """

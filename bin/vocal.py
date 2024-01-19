@@ -22,24 +22,13 @@ import PSL_helper
 
 # Temp constants
 ref_id = "HA"
-# ref_start = 21563
-# ref_end   = 25384
 ref_start, ref_end = D_GENEPOS[ref_id][1:]
-### We fixed an divergence of max 5% with the reference
-### This is a very conservative estimate
-#max_percent_shift = 0.05
-### Influenza genome is about 13600 bases long
-#max_shift_allowed = int(13600 * max_percent_shift)
-QUERY_START_RESTRICTED = 1 #ref_start - max_shift_allowed - 1
-QUERY_END_RESTRICTED = 1750 #ref_end + max_shift_allowed
 
 
 def Pairwise_align_query_ref(
     ref_seq: str,
     query_seq: str,
     align_method: str = "parasail",
-    align_start_on_ref: int = QUERY_START_RESTRICTED,
-    align_end_on_ref: int = QUERY_END_RESTRICTED,
 ) -> Tuple[str, str]:
     """
     Performs the alignment of query on reference using a pairwise alignment.
@@ -48,8 +37,6 @@ def Pairwise_align_query_ref(
         query_seq (str): Query sequence to align.
         ref_seq (str): Reference sequence to align against.
         align_method (str, optional): Aligner to use. Defaults to parasail.
-        align_start_on_ref (int, optional): Start of the query to align. Defaults to QUERY_START_RESTRICTED.
-        align_end_on_ref (int, optional): End of the query to align. Defaults to QUERY_END_RESTRICTED.
 
     Returns:
         Tuple[str, str]: Tuple containing the aligned reference sequence and query sequence
@@ -59,10 +46,10 @@ def Pairwise_align_query_ref(
         print("== Will be using parasail-python alignment Module")
         aligner_func = aligner.parasail_align
     else:
-        raise ValueError("Aligner function option not known")
+        raise ValueError("Unknown aligner function!")
 
     print(
-        f"Finding Alignment of the {ref_id} protein (length: {len(ref_seq)}) to the subsequence ({align_start_on_ref}-{align_end_on_ref}) in the consensus"
+        f"Finding Alignment of the {ref_id} protein (length: {len(ref_seq)}) in the consensus"
     )
     
     s_time = time.time()
@@ -149,14 +136,15 @@ def main():
         help="Set of complete consensus genome sequences (fasta format)",
     )
     parser.add_argument(
+        "-r",
         "--ref_nt",
         required=True,
         help="Reference sequence (DNA version)",
     )
     parser.add_argument(
-        "--ref_aa",
+        "--control",
         required=True,
-        help="Reference sequence (Protein version)",
+        help="Sequence with MOC and ROI",
     )
     parser.add_argument(
         "-o",
@@ -176,16 +164,15 @@ def main():
         help="indicates that the PSL file is given as a president report (default: False)",
     )
     parser.add_argument(
-        "--restrict-start",
-        type=int,
-        default=QUERY_START_RESTRICTED,
-        help="start coordinate for restricted alignment of the query sequences (estimated position of the spike)",
+        "--complete",
+        required=True,
+        help="Only consider complete genomes",
     )
     parser.add_argument(
-        "--restrict-end",
-        type=int,
-        default=QUERY_END_RESTRICTED,
-        help="END coordinate for restricted alignment of the query sequences (estimated position of the spike)",
+        "-n",
+        "--number",
+        required=True,
+        help="Number of nucleotides a sequence can differ from the length of the reference sequence to be considered as complete",
     )
     parser.add_argument(
         "-v",
@@ -206,31 +193,79 @@ def main():
         else:
             PSL_df = PSL_helper.readPSL(args.PSL)
     
-    # 1 is for HA, 0 is NA
-    ref_nt = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_nt),'fasta')][1]
-    ref_aa = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_aa),'fasta')][1]
+    ref_nt = [str(rec.seq) for rec in SeqIO.parse(open(args.ref_nt),'fasta')][0]
 
     nrecords = 0
     nskipped = 0
+    nincomplete = 0
     list_of_dfs = []
     fastain = args.input
+    controlin = args.control
     verbose = args.verbose
+
+    n = int(args.number)
+    if args.complete == 'yes':
+        complete = True
+        print(
+            "FluWarnSystem running only for COMPLETE SEQUENCES"
+        )
+        print(
+            f"The reference sequence is {len(ref_nt)} nucleotides long"
+        )
+        print(
+            f"A sequence is considered as complete with a length between {len(ref_nt)-n} and {len(ref_nt)+n}"
+        )
+    elif args.complete == 'no':
+        complete = False
+        print(
+            "FluWarnSystem running for ALL SEQUENCES"
+        )
+    else:
+        raise ValueError("The parameter complete only takes the options yes and no!")
+
+    # Add a sequence with a MOC and ROI to catch the error from prepare_report.R 
+    # that occurs when there is no MOC / ROI in input fasta
+    # The sequence is removed in report.Rmd and is not in the final report
+    with open(fastain, 'a') as in_file:
+        with open(controlin, 'r') as control_file:
+            for line in control_file:
+                in_file.write(line)
 
     print(f"Opening {fastain}")
     for record in SeqIO.parse(fastain, "fasta"):
+        print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+        print(record.description)
+
         ##Quick hack to have the record IDs with the spaces masked (compatible with president)
         record.id = record.description.replace(" ", "%space%")
         query_seq = str(record.seq.upper())
 
-        if 'X' in query_seq:
+        if complete == True and record.description == "OFL3839 | HA | A/Germany/767/95 | OFL_ISL_789 | AF008754 | H3N2":
+            print(
+                "MOC and ROI sequence is included, even though it is incomplete"
+            )
+            print(
+                "It is removed before the report is generated"
+            )
+        elif complete == True and (len(record.seq) < (len(ref_nt)-n) or len(record.seq) > (len(ref_nt)+n)):
+            SeqIO.write(record, 'incomplete_seq.fasta', 'fasta')
+            print(
+                f"Found incomplete sequence of length {len(record.seq)}, the sequence will not be processed"
+            )
+            nincomplete += 1
+            continue
+        else:
+            print(
+                f"The sequence is {len(record.seq)} nucleotides long"
+            )
+
+        if not set(query_seq) <= {"A", "T", "G", "C", "N", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"}:
+            print(record.id)
             print(
                 "Found non IUPAC nucleotide characters in query, the sequence will not be processed"
             )
-            nskipped += 1
-            continue
-        if 'I' in query_seq:
             print(
-                "Found non IUPAC nucleotide characters in query, the sequence will not be processed"
+                f"Characters found {set(query_seq) - set(['A', 'T', 'G', 'C', 'N', 'R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V'])}"
             )
             nskipped += 1
             continue
@@ -270,8 +305,6 @@ def main():
                     ref_nt,
                     query_seq,
                     al_module,
-                    args.restrict_start,
-                    args.restrict_end,
                 )
         except KeyError:
             print("This key doesn't exist>", record.id)
@@ -284,6 +317,7 @@ def main():
         
         # We only process sequences with ACGT- characters
         if not set(query_al) <= {"A", "T", "G", "C", "-", "N"}:
+            print(record.id)
             print(
                 "Found non ACGTN- characters in alignment of query, the sequence will not be processed"
             )
@@ -295,20 +329,13 @@ def main():
         nrecords += 1
 
         df = AnnotateVariants.alignedCDSvariants(ref_al, query_al, verbose=verbose)
-        # print(f"Searching for Amino acids differences, found a total of {len(df)} variations")
         
         if not df.empty:
             df["ID"] = record.id
             df["target_gene"] = ref_id
-            #df["target_gene_start"] = offset
-            # merge with the other dataframes
-            # print(df)
             list_of_dfs.append(df)
-        # if nrecords >= 1000:
-        #    break
-        # clean up the output dataframe and order the columns
 
-    print(f"Processed {nrecords} sequences, skipped {nskipped}")
+    print(f"Processed {nrecords} sequences, skipped {nskipped}, incomplete {nincomplete}")
     df_all_mutations = pd.concat(list_of_dfs, ignore_index=True, sort=False)
 
     df_all_mutations.to_csv(args.output, sep="\t")
