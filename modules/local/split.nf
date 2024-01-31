@@ -9,6 +9,7 @@ process SPLIT {
     output:
         path "h1n1_ha.fasta",   emit: h1n1_ha
         path "h3n2_ha.fasta",   emit: h3n2_ha
+        path "vic_ha.fasta",   emit: vic_ha
 
     script:
     """
@@ -18,12 +19,14 @@ process SPLIT {
         -i ${input_fasta} \
         -m ${params.split} \
         --h1n1 "h1n1_ha.fasta" \
-        --h3n2 "h3n2_ha.fasta"
+        --h3n2 "h3n2_ha.fasta" \
+        --vic "vic_ha.fasta"
     """
 
     stub:
     """
     touch h1n1_ha.fasta
     touch h3n2_ha.fasta
+    touch vic_ha.fasta
     """
 }

@@ -43,6 +43,9 @@ process REPORT {
     """
     touch fluwarnsystem-alerts-samples-all.csv 
     touch fluwarnsystem-alerts-clusters-summaries-all.csv 
-    touch fluwarnsystem-report.html 
+    touch report.html 
+    touch report-h1n1.html
+    touch report-h3n2.html
+    touch report-vic.html
     """
 }

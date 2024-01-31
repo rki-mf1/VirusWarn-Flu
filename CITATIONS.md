@@ -8,6 +8,9 @@
 
 ## Pipeline 
 
+- [Nextclade](https://clades.nextstrain.org)
+  > Aksamentov, I., Roemer, C., Hodcroft, E. B., & Neher, R. A., (2021). Nextclade: clade assignment, mutation calling and quality control for viral genomes. Journal of Open Source Software, 6(67), 3773, https://doi.org/10.21105/joss.03773
+
 **The customized scripts in [`bin`](bin) use the following languages and packages:**
 
 ### [Python](https://www.python.org/) 
@@ -39,7 +42,9 @@
 
 - [rmarkdown](https://CRAN.R-project.org/package=rmarkdown)
   > Xie Y, Allaire J, Grolemund G (2018). R Markdown: The Definitive Guide. Chapman and Hall/CRC, Boca Raton, Florida. ISBN 9781138359338, https://bookdown.org/yihui/rmarkdown.
+
   > Xie Y, Dervieux C, Riederer E (2020). R Markdown Cookbook. Chapman and Hall/CRC, Boca Raton, Florida. ISBN 9780367563837, https://bookdown.org/yihui/rmarkdown-cookbook.
+
   > Allaire J, Xie Y, Dervieux C, McPherson J, Luraschi J, Ushey K, Atkins A, Wickham H, Cheng J, Chang W, Iannone R (2023). rmarkdown: Dynamic Documents for R. R package version 2.25, https://github.com/rstudio/rmarkdown.
 
 - [optparse](https://CRAN.R-project.org/package=optparse)
@@ -56,6 +61,7 @@
 
 - [igraph](https://CRAN.R-project.org/package=igraph)
   > Csardi G, Nepusz T (2006). “The igraph software package for complex network research.” InterJournal, Complex Systems, 1695. https://igraph.org.
+  
   > Csárdi G, Nepusz T, Traag V, Horvát S, Zanini F, Noom D, Müller K (2023). igraph: Network Analysis and Visualization in R. doi:10.5281/zenodo.7682609, R package version 1.6.0.
 
 - [forcats](https://CRAN.R-project.org/package=forcats)

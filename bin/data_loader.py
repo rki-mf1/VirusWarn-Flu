@@ -65,7 +65,7 @@ D_GENEPOS = {
     #"PB1": ("A/Brisbane/2/2018", 1, 757),   # Segment 2 - RNA polymerase subunit & PB1-F2 protein
     #"PA": ("A/Brisbane/2/2018", 1, 716),    # Segment 3 - RNA polymerase subunit & PA-X protein
     #"PA-X": ("A/Brisbane/2/2018", 1, 232),  # Segment 3 - RNA polymerase subunit & PA-X protein
-    "HA": ("A/Brisbane/2/2018", 1, 566),    # Segment 4 - hemagglutinin
+    "HA": ("A/Brisbane/2/2018", 1, 1752),     # Segment 4 - hemagglutinin
     #"NP": ("A/Brisbane/2/2018", 1, 498),    # Segment 5 - nucleoprotein
     #"NA": ("A/Brisbane/2/2018", 1, 469),    # Segment 6 - neuraminidase
     #"MS1": ("A/Brisbane/2/2018", 1, 252),   # Segment 7 - two matrix proteins

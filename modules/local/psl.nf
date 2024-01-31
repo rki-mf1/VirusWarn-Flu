@@ -4,7 +4,7 @@ process PSL {
     publishDir "${params.output}/${params.vocal_dir}", mode: params.publish_dir_mode
 
     input:
-        path ref_nt
+        path ref
         path input_fasta
         path control
 
@@ -15,14 +15,14 @@ process PSL {
     """
     echo "Step 1: Generate a PSL file with alingments"
 
-    pblat ${ref_nt} \
+    pblat ${ref} \
         ${input_fasta} \
         -threads=4 \
         "output.psl"
 
     vocal.py \
         -i ${input_fasta} \
-        -r ${ref_nt} \
+        -r ${ref} \
         --control ${control} \
         --PSL "output_psl" \
         -o "variant_table.tsv"

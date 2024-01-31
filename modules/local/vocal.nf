@@ -5,7 +5,7 @@ process VOCAL {
 
     input:
         path input_fasta
-        path ref_nt
+        path ref
         path control
 
     output:
@@ -17,7 +17,7 @@ process VOCAL {
 
     vocal.py \
         -i ${input_fasta} \
-        -r ${ref_nt} \
+        -r ${ref} \
         --control ${control} \
         --complete ${params.complete} \
         -n ${params.n} \

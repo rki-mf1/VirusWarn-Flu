@@ -83,7 +83,7 @@ GEOLOC_COL = "PRIMARY_DIAGNOSTIC_LAB_PLZ"
 MUT_TYPE_COL = "variant_type"
 VARIANT_CLASS_COL = "VariantType"
 
-var_pheno = read_tsv(file_variant_table, col_type = "ccccicicc") %>%
+var_pheno = read_tsv(file_variant_table) %>%
   mutate(type = factor(type, levels = VARIANT_TYPE_LEVELS))
 
 var_pheno_wide_filter = var_pheno %>%

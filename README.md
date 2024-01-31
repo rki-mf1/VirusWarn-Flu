@@ -82,13 +82,16 @@ refh1n1                  Path to the reference sequence for H1N1.
 refh3n2                  Path to the reference sequence for H3N2.
                          Otherwise A/Darwin/6/2021 (EPI_ISL_1563628) is used.
                          [ default: '' ]
+refh3n2                  Path to the reference sequence for Victoria.
+                         Otherwise B/Brisbane/60/2008 (KX058884.1) is used.
+                         [ default: '' ]
 metadata                 The path to a metadate file for the sequences with collection dates.
                          Required to generate a heatmap in the report.
                          [ default: '' ]
 subtype                  If the input fasta file only contains sequences of one subtype, 
                          define the subtype to choose the right references and tables.
                          The options are H1N1 and H3N2 for Influenza A,
-                         Victoria and Yamagata for Influenza B.
+                         Victoria for Influenza B.
                          [ default: 'H1N1' ]
 psl                      The parameter enables to generate a PSL file with an alignment if set to true.
                          If set to false, the step is skipped.
@@ -97,7 +100,7 @@ split                    If the input fasta file contains sequences of more than
                          enable the split parameter to write them into one file per subtype and 
                          ensure the use of the right references and tables.
                          The options are FluPipe, GISAID and OpenFlu.
-                         [ default: 'H1N1' ]
+                         [ default: '' ]
 complete                 FluWarnSystem only considers sequences within a defined range of length
                          and writes the rest into incomplete_seq.fasta if set to yes.
                          If set to no, all sequences are considered.

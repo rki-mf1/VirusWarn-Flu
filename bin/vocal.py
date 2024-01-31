@@ -240,7 +240,7 @@ def main():
         record.id = record.description.replace(" ", "%space%")
         query_seq = str(record.seq.upper())
 
-        if complete == True and record.description == "OFL3839 | HA | A/Germany/767/95 | OFL_ISL_789 | AF008754 | H3N2":
+        if complete == True and record.description == "OFL3839 | HA | A/Germany/767/95 | OFL_ISL_789 | AF008754 | H3N2" or record.description == "OFL546232 | HA | A/India/Alp1410359/2014 | OFL_ISL_131148 | KR052614 | H1N1":
             print(
                 "MOC and ROI sequence is included, even though it is incomplete"
             )

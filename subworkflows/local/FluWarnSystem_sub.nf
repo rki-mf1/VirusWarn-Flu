@@ -1,11 +1,11 @@
-include { VOCAL }       from '../../modules/local/vocal'
+include { NEXTCLADE }   from '../../modules/local/nextclade'
 include { PSL }         from '../../modules/local/psl'
 include { ANNOTATION }  from '../../modules/local/annotation'
 include { REPORT }      from '../../modules/local/report'
 
 workflow FLUWARNSYSTEM_SUB {
     take:
-        ref_nt
+        ref
         input_fasta
         control
         mutation_table
@@ -15,11 +15,11 @@ workflow FLUWARNSYSTEM_SUB {
 
     main:
         if (params.psl == true) {
-            PSL ( ref_nt, input_fasta, control )
+            PSL ( ref, input_fasta, control )
             ANNOTATION ( PSL.out.variant_table, mutation_table, roi_table)
         } else if (params.psl == false) {
-            VOCAL ( input_fasta, ref_nt, control )
-            ANNOTATION ( VOCAL.out.variant_table, mutation_table, roi_table)
+            NEXTCLADE ( input_fasta, ref )
+            ANNOTATION ( NEXTCLADE.out.variant_table, mutation_table, roi_table)
         } else {
             exit 1,
             "ERROR: $params.psl is an invalid input for the parameter psl!\n Please choose between yes/y and no/n!\n"

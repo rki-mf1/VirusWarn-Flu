@@ -4,8 +4,6 @@
 Annotate the list of mutations found in a dataframe
 
 @hrichard
-
-vocal-flu Version revised by @chkirschbaum
 """
 
 import sys
