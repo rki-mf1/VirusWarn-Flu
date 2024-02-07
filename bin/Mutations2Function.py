@@ -199,12 +199,27 @@ def main():
         "variant_size",
         "type",
         "infos",
-    ]
+    ] 
 
     if args.largetable:
         df_variant_with_annot.to_csv(out_table, sep="\t", index=False)
     else:
-        df_variant_with_annot[columns_save].to_csv(out_table, sep="\t", index=False)
+        df_variant_with_annot_small = df_variant_with_annot[columns_save]
+
+        # Adds a row with type RegionOfInterest to prevent error in following R script 
+        df_variant_with_annot_small.loc[len(df_variant_with_annot.index)] = [
+            'ROI_ERROR_CATCH',	
+            '',
+            '',
+            '',
+            0,	
+            '',	
+            0,	
+            'RegionOfInterest', 
+            '',
+        ] 
+        
+        df_variant_with_annot_small.to_csv(out_table, sep="\t", index=False)
 
 
 if __name__ == "__main__":

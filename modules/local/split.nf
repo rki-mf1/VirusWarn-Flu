@@ -7,9 +7,9 @@ process SPLIT {
         path input_fasta
 
     output:
-        path "h1n1_ha.fasta",   emit: h1n1_ha
-        path "h3n2_ha.fasta",   emit: h3n2_ha
-        path "vic_ha.fasta",   emit: vic_ha
+        path "h1n1_ha.fasta",   emit: h1n1_ha,      optional: true
+        path "h3n2_ha.fasta",   emit: h3n2_ha,      optional: true
+        path "vic_ha.fasta",   emit: vic_ha,        optional: true
 
     script:
     """

@@ -12,7 +12,7 @@ from Bio import SeqIO
 def get_substrings(
     mode: str,
     seq_id: str,
-) -> Tuple[str, str, str]:
+) -> Tuple[str, str]:
     """
     Performs the alignment of query on reference using a pairwise alignment.
 
@@ -73,12 +73,18 @@ def main():
         default="h3n2_ha.fasta",
         help="Output fasta file with H3N2 HA sequences",
     )
+    parser.add_argument(
+        "--vic",
+        default="vic_ha.fasta",
+        help="Output fasta file with Victoria HA sequences",
+    )
     args = parser.parse_args()
 
     fastain = args.input
     mode = args.mode
     h1n1 = args.h1n1
     h3n2 = args.h3n2
+    vic = args.vic
 
     for record in SeqIO.parse(fastain, "fasta"):
         subtype, segment = get_substrings(mode, record.description)
@@ -103,7 +109,16 @@ def main():
                     f"Found H3N2 sequence of segment {segment}, the sequence will not be processed"
                 )
                 SeqIO.write(record, 'h3n2_other_seg.fasta', 'fasta')
-        # Add Influenza B here
+        elif subtype == 'H0N0':
+            if segment == 'HA':
+                with open(vic, 'a') as output:
+                    SeqIO.write(record, output, 'fasta')
+            #elif segment == 'NA':
+            else:
+                print(
+                    f"Found Victoria sequence of segment {segment}, the sequence will not be processed"
+                )
+                SeqIO.write(record, 'vic_other_seg.fasta', 'fasta')
         else:
             print(
                 f"Found sequence of unknown subtype {subtype}, the sequence will not be processed"

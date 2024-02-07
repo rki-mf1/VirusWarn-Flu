@@ -8,6 +8,8 @@ params:
   metadata: ""
   alert_samples: "fluwarnsystem-alerts-samples-all.csv"
   alert_clusters: "fluwarnsystem-alerts-clusters-summaries-all.csv"
+  subtype: ""
+  ref: ""
   moc: ""
   roi: ""
 ---
@@ -95,10 +97,8 @@ if (params$metadata != ""){
 ```
 
 ```{r remove, include=FALSE}
-fasta <- fasta[!names(fasta) %in% c('OFL546232 | HA | A/India/Alp1410359/2014 | OFL_ISL_131148 | KR052614 | H1N1', 'OFL3839 | HA | A/Germany/767/95 | OFL_ISL_789 | AF008754 | H3N2')]
-
 samples <- samples %>%
-  filter(!ID %in% c('OFL546232%space%|%space%HA%space%|%space%A/India/Alp1410359/2014%space%|%space%OFL_ISL_131148%space%|%space%KR052614%space%|%space%H1N1', 'OFL3839%space%|%space%HA%space%|%space%A/Germany/767/95%space%|%space%OFL_ISL_789%space%|%space%AF008754%space%|%space%H3N2'))
+  filter(!ID %in% 'ROI_ERROR_CATCH')
 ```
 
 
@@ -106,7 +106,7 @@ samples <- samples %>%
 
 ## Overview
 
-**Sequences that are not aligned were skipped due to none IUPAC characters in the sequence.**
+**Sequences that are not aligned were skipped because they were thrown out by Nextclade due to errors.**
 
 ```{r seq total, echo=FALSE, message=FALSE, warning=FALSE}
 cat(paste0('> Sequences total in fasta file: ', length(fasta)))
@@ -943,13 +943,45 @@ cat(paste0('> ', 'Sequences in Group BLACK: ', nrow(black_table)))
 
 ## Reference sequences
 
-**Coming soon...**
+The results from this report were calculated with the following reference sequence:
 
 ```{r ref, echo=FALSE, message=FALSE, warning=FALSE}
-
+if (params$subtype == "h1n1" && params$ref == ""){
+  cat("The Influenza A H1N1pdm reference sequence A/Wisconsin/588/2019 MW626065 was used.")
+}else if (params$subtype == "h1n1" && params$ref == "old"){
+  cat("The Influenza A H1N1pdm reference sequence A/California/7/2009 CY121680 was used.")
+}else if (params$subtype == "h3n2" && params$ref == ""){
+  cat("The Influenza A H3N2 reference sequenceA/Darwin/6/2021 EPI1857216 was used.")
+}else if (params$subtype == "h3n2" && params$ref == "old"){
+  cat("The Influenza A H3N2 reference sequence A/Wisconsin/67/2005 CY163680 was used.")
+}else if (params$subtype == "vic" && params$ref == ""){
+  cat("The Influenza B Victoria reference sequence B/Brisbane/60/2008 KX058884 was used.")
+}
 ```
 
+The annotations are generated with [Nextclade](https://clades.nextstrain.org). The following references are supported for the different Influenza subtypes.
 
+#### Influenza A H1N1pdm09
+
+For HA segment:
+
+  - [A/Wisconsin/588/2019 MW626065](https://github.com/nextstrain/nextclade_data/blob/master/data/nextstrain/flu/h1n1pdm/ha/MW626062/reference.fasta)
+  
+  - [A/California/7/2009 CY121680](https://github.com/nextstrain/nextclade_data/blob/master/data/nextstrain/flu/h1n1pdm/ha/CY121680/reference.fasta)
+
+#### Influenza A H3N2
+
+For HA segment:
+
+  - [A/Darwin/6/2021 EPI1857216](https://github.com/nextstrain/nextclade_data/blob/master/data/nextstrain/flu/h3n2/ha/EPI1857216/reference.fasta)
+
+  - [A/Wisconsin/67/2005 CY163680](https://github.com/nextstrain/nextclade_data/blob/master/data/nextstrain/flu/h3n2/ha/CY163680/reference.fasta)
+
+#### Influenza B Victoria 
+
+For HA segment:
+
+  - [B/Brisbane/60/2008 KX058884](https://github.com/nextstrain/nextclade_data/blob/master/data/nextstrain/flu/vic/ha/KX058884/reference.fasta)
 
 
 <a id="item-seven"></a>
@@ -977,7 +1009,7 @@ datatable(
 ```
 
 
-<a id="item-seven"></a>
+<a id="item-eight"></a>
 
 ## ROI table
 

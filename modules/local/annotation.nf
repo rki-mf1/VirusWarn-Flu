@@ -5,7 +5,7 @@ process ANNOTATION {
 
     input:
         path variant_table
-        path mutation_table
+        path moc_table
         path roi_table
 
     output:
@@ -17,7 +17,7 @@ process ANNOTATION {
 
     Mutations2Function.py \
         -i ${variant_table} \
-        -a ${mutation_table} \
+        -a ${moc_table} \
         --roi_table ${roi_table} \
         -o "variants_with_phenotypes.tsv"
     """

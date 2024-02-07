@@ -7,9 +7,10 @@ process REPORT {
         path variants_phenotypes
         path rmd
         path input_fasta
-        path mutation_table
+        path moc_table
         path roi_table
         val metadata
+        val subtype
         val output
 
     output:
@@ -34,7 +35,9 @@ process REPORT {
             metadata = \'${metadata}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
             alert_clusters = \'fluwarnsystem-alerts-clusters-summaries-all.csv\', \\
-            moc = \'${mutation_table}\', \\
+            subtype = \'${subtype}\', \\
+            ref = \'${params.ref}\', \\
+            moc = \'${moc_table}\', \\
             roi = \'${roi_table}\')
         )"
     """

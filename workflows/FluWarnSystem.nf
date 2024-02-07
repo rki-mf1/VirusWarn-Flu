@@ -9,9 +9,8 @@ if (params.help) { exit 0, helpMSG() }
 
 // Parameters sanity checking
 Set valid_params = ['cores', 'max_cores', 'memory', 'help',
-                    'fasta', 'refh1n1', 'refh3n2', 'refvic',
-                    'metadata', 'subtype', 
-                    'psl', 'split', 'complete', 'n',
+                    'fasta', 'ref', 'metadata', 'subtype', 
+                    'qc', 'split',
                     'output', 'split_dir', 'nextclade_dir', 
                     'annot_dir', 'report_dir', 'runinfo_dir',
                     'publish_dir_mode', 'conda_cache_dir',
@@ -41,33 +40,6 @@ workflow FLUWARNSYSTEM {
 
     input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
 
-    if (params.refh1n1 != '') {
-        ref_h1n1 = Channel.fromPath( file("${params.refh1n1}", checkIfExists: true) )
-    } else {
-        ref_h1n1 = params.refh1n1
-    }
-    control_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/HA_moc_roi_seq.fasta", checkIfExists: true) )
-    moc_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
-    roi_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )     
-
-    if (params.refh3n2 != '') {
-        ref_h3n2 = Channel.fromPath( file("${params.refh3n2}", checkIfExists: true) )
-    } else {
-        ref_h3n2 = params.refh3n2
-    }
-    control_h3n2 = Channel.fromPath( file("data/A(H3N2)/HA_moc_roi_seq.fasta", checkIfExists: true) )
-    moc_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_moc_HA.tsv", checkIfExists: true) )
-    roi_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
-
-    if (params.refvic != '') {
-        ref_vic = Channel.fromPath( file("${params.refvic}", checkIfExists: true) )
-    } else {
-        ref_vic = params.refvic
-    }
-    control_vic = Channel.fromPath( file("data/B(Victoria)/HA_moc_roi_seq.fasta", checkIfExists: true) )
-    moc_table_vic = Channel.fromPath( file("data/B(Victoria)/table_vic_moc_HA.tsv", checkIfExists: true) )
-    roi_table_vic = Channel.fromPath( file("data/B(Victoria)/table_vic_roi.csv", checkIfExists: true) )
-
     rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
 
     if (params.metadata != '') {
@@ -80,41 +52,41 @@ workflow FLUWARNSYSTEM {
 
         if (params.subtype == 'h1n1') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
-            ref_nt = ref_h1n1
-            control = control_h1n1
-            mutation_table = moc_table_h1n1
-            roi_table = roi_table_h1n1
+            moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+            roi_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
         } else if (params.subtype == 'h3n2') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
-            ref_nt = ref_h3n2
-            control = control_h3n2
-            mutation_table = moc_table_h3n2
-            roi_table = roi_table_h3n2
+            moc_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_moc_HA.tsv", checkIfExists: true) )
+            roi_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
         } else if (params.subtype == 'vic') {
             log.info"INFO: FluWarnSystem is running for Influenza B(Victoria)"
-            ref_nt = ref_vic
-            control = control_vic
-            mutation_table = moc_table_vic
-            roi_table = roi_table_vic
+            moc_table = Channel.fromPath( file("data/B(Victoria)/table_vic_moc_HA.tsv", checkIfExists: true) )
+            roi_table = Channel.fromPath( file("data/B(Victoria)/table_vic_roi.csv", checkIfExists: true) )
         } else {
             exit 1, 
-            "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between H1N1, H3N2, Victoria and Yamagata!\n"
+            "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between h1n1, h3n2, vic!\n"
         }
 
-        FLUWARNSYSTEM_SUB ( ref_nt, input_fasta, control, mutation_table, roi_table, rmd, metadata )
+        FLUWARNSYSTEM_SUB ( input_fasta, moc_table, roi_table, rmd, metadata )
 
     } else if (params.split == 'FluPipe' || 'flupipe' || 'GISAID' || 'gisaid' || 'OpenFlu' || 'openflu') {
+        log.info"INFO: FluWarnSystem is running in SPLIT mode $params.split"
+        log.info"INFO: Seperate reports for all subtypes in the dataset are generated"
 
-        if (params.psl == true) {
-            exit 1, 
-            "ERROR: $params.psl is an invalid input for the parameter split!\n Please choose between FluPipe, GISAID and OpenFlu!\n"
-        }
+        moc_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+        roi_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
+
+        moc_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_moc_HA.tsv", checkIfExists: true) )
+        roi_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
+
+        moc_table_vic = Channel.fromPath( file("data/B(Victoria)/table_vic_moc_HA.tsv", checkIfExists: true) )
+        roi_table_vic = Channel.fromPath( file("data/B(Victoria)/table_vic_roi.csv", checkIfExists: true) )
 
         FLUWARNSYSTEM_SPLIT ( 
             input_fasta, 
-            ref_h1n1, control_h1n1, moc_table_h1n1, roi_table_h1n1,
-            ref_h3n2, control_h3n2, moc_table_h3n2, roi_table_h3n2, 
-            ref_vic, control_vic, moc_table_vic, roi_table_vic, 
+            moc_table_h1n1, roi_table_h1n1,
+            moc_table_h3n2, roi_table_h3n2, 
+            moc_table_vic, roi_table_vic, 
             rmd, metadata 
         )
 
@@ -149,39 +121,29 @@ def helpMSG() {
 
     ${c_yellow}Input options:${c_reset}
     ${c_green} --fasta ${c_reset}           REQUIRED! Path to the input fasta file.
-                                            [ default: $params.fasta ]
-    ${c_green} --refh1n1 ${c_reset}         Path to the reference sequence for H1N1.
-                                            Otherwise A/Wisconsin/588/2019 (MW626062.1) is used.
-                                            [ default: $params.refh1n1 ]
-    ${c_green} --refh3n2 ${c_reset}         Path to the reference sequence for H3N2.
-                                            Otherwise A/Darwin/6/2021 (EPI_ISL_1563628) is used.
-                                            [ default: $params.refh3n2 ]
-    ${c_green} --refvic ${c_reset}          Path to the reference sequence for Victoria.
-                                            Otherwise B/Brisbane/60/2008 (KX058884.1) is used.
-                                            [ default: $params.refvic ]                                        
+                        [ default: $params.fasta ]
+    ${c_green} --ref ${c_reset}             If you want to use the recent references from Nextclade, choose ''.
+                        H1N1: A/Wisconsin/588/2019 (MW626065)
+                        H3N2: A/Darwin/6/2021 (EPI1857216)
+                        If you want to use the older references for H1N1 and H3N2, choose 'old'.
+                        H1N1: A/California/7/2009 (CY121680)
+                        H3N2: A/Wisconsin/67/2005 (CY163680)
+                        For Victoria, only B/Brisbane/60/2008 (KX058884) is available.
+                        [ default: $params.ref ]                                     
     ${c_green} --metadata ${c_reset}        The path to a metadata file in GISAID form for the sequences with 
-                                            collection dates.
-                                            Required to generate a heatmap in the report.
-                                            [ default: $params.metadata ]
+                        collection dates.
+                        Required to generate a heatmap in the report.
+                        [ default: $params.metadata ]
     ${c_green} --subtype ${c_reset}         If the input fasta file only contains sequences of one subtype, 
-                                            define the subtype to choose the right references and tables.
-                                            Options for Influenza A: 'H1N1' and 'H3N2'
-                                            Options for Influenza B: 'Victoria'
-                                            [ default: $params.subtype ]
-    ${c_green} --psl ${c_reset}             Run process with ('y') or without ('n') psl format.
-                                            [ default: $params.psl ]
+                        define the subtype to choose the right references and tables.
+                        Options for Influenza A: 'h1n1' and 'h3n2'
+                        Options for Influenza B: 'vic'
+                        [ default: $params.subtype ]
     ${c_green} --split ${c_reset}           If the input fasta file contains sequences of more than one subtype, 
-                                            enable the split parameter to write them into one file per subtype and 
-                                            ensure the use of the right references and tables.
-                                            Options: 'FluPipe', 'GISAID' and 'OpenFlu'
-                                            [ default: $params.split ]
-    ${c_green} --complete ${c_reset}        FluWarnSystem only considers sequences within a defined range of length
-                                            and writes the rest into incomplete_seq.fasta if set to 'y'.
-                                            If set to 'n', all sequences are considered.
-                                            [ default: $params.complete ]
-    ${c_green} --n ${c_reset}               Number of nucleotides a sequence can differ from the length of 
-                                            the reference sequence to be considered as complete.
-                                            [ default: $params.n ]
+                        enable the split parameter to write them into one file per subtype and 
+                        ensure the use of the right references and tables.
+                        Options: 'FluPipe', 'GISAID' and 'OpenFlu'
+                        [ default: $params.split ]
 
     ${c_yellow}Computing options:${c_reset}
     --cores                  Max cores per process for local use [default: $params.cores]
@@ -191,7 +153,7 @@ def helpMSG() {
     ${c_yellow}Output options:${c_reset}
     --output                 Name of the result folder [default: $params.output]
     --publish_dir_mode       Mode of output publishing: 'copy', 'symlink' [default: $params.publish_dir_mode]
-                                ${c_dim}With 'symlink' results are lost when removing the work directory.${c_reset}
+                             ${c_dim}With 'symlink' results are lost when removing the work directory.${c_reset}
 
     ${c_yellow}Caching:${c_reset}
     --conda_cache_dir        Location for storing the conda environments [default: $params.conda_cache_dir]
