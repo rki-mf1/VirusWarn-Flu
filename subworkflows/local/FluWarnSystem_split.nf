@@ -24,6 +24,7 @@ workflow FLUWARNSYSTEM_SPLIT {
             ANNOTATION_H1N1 ( NEXTCLADE_H1N1.out.variant_table, moc_table_h1n1, roi_table_h1n1 )
 
             REPORT_H1N1 ( 
+                NEXTCLADE_H1N1.out.variant_table,
                 ANNOTATION_H1N1.out.variants_phenotypes, rmd, 
                 SPLIT.out.h1n1_ha, moc_table_h1n1, roi_table_h1n1, 
                 metadata, 'h1n1', 'report-h1n1.html'
@@ -36,6 +37,7 @@ workflow FLUWARNSYSTEM_SPLIT {
             ANNOTATION_H3N2 ( NEXTCLADE_H3N2.out.variant_table, moc_table_h3n2, roi_table_h3n2 )
 
             REPORT_H3N2 ( 
+                NEXTCLADE_H3N2.out.variant_table,
                 ANNOTATION_H3N2.out.variants_phenotypes, rmd, 
                 SPLIT.out.h3n2_ha, moc_table_h3n2, roi_table_h3n2, 
                 metadata, 'h3n2', 'report-h3n2.html'
@@ -48,6 +50,7 @@ workflow FLUWARNSYSTEM_SPLIT {
             ANNOTATION_VIC ( NEXTCLADE_VIC.out.variant_table, moc_table_vic, roi_table_vic )
 
             REPORT_VIC ( 
+                NEXTCLADE_VIC.out.variant_table,
                 ANNOTATION_VIC.out.variants_phenotypes, rmd, 
                 SPLIT.out.vic_ha, moc_table_vic, roi_table_vic, 
                 metadata, 'vic', 'report-vic.html'

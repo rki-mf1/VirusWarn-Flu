@@ -6,6 +6,7 @@ output: html_document
 params:
   fasta: ""
   metadata: ""
+  variant_table: "variant_table.tsv"
   alert_samples: "fluwarnsystem-alerts-samples-all.csv"
   alert_clusters: "fluwarnsystem-alerts-clusters-summaries-all.csv"
   subtype: ""
@@ -85,6 +86,7 @@ library(DT)
 ```{r data, include=FALSE}
 fasta <- read.fasta(params$fasta)
 
+variant_table <- read.delim(params$variant_table)
 samples <- read.delim(params$alert_samples, sep = ',')
 clusters <- read.delim(params$alert_clusters, sep = ',')
 
@@ -99,6 +101,23 @@ if (params$metadata != ""){
 ```{r remove, include=FALSE}
 samples <- samples %>%
   filter(!ID %in% 'ROI_ERROR_CATCH')
+```
+
+```{r functions, include=FALSE}
+create_button_list <- function(groups) {
+  button_list <- list()
+  for (i in seq_along(groups)) {
+    button <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = rep(FALSE, length(groups))),
+                  list(title = groups[i])),
+      visible = TRUE
+    )
+    button_list[[i]] <- button
+  }
+  return(button_list)
+}
 ```
 
 
@@ -151,51 +170,97 @@ cat(paste0('> ', 'Sequences in Group RED: ', nrow(red_table)))
 
 ### Lollipop Plot
 
+```{r red clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+clade <- c()
+for(i in red_table$ID){
+  new_clade <- variant_table[variant_table$ID == i, "clade"]
+  clade <- c(clade, new_clade[[1]])
+}
+clade_df <- red_table
+clade_df$clade <- clade
+clade_unique <- unique(clade)
+clade_len <- length(unique(clade))
+
+bool_list <- list()
+for (i in 1:(clade_len)){
+  new_list <- rep(TRUE, (clade_len))
+  #new_list[i] <- TRUE
+  bool_list[[i]] <- new_list
+}
+
+button_list <- list(
+  label = "All sequences",
+  method = "update",
+  args = list(list(visible=TRUE), list(title="All sequences"))
+)
+for (i in 1:clade_len){
+  list_clade <- list(
+    label = clade_unique[[i]],
+    method = "update",
+    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
+  )
+  button_list <- list(button_list, list_clade)
+}
+
+clade_df$group <- "All Sequences"
+df_list <- list(clade_df)
+for (i in clade_unique){
+  new_df <- subset(clade_df, clade == i)
+  new_df$group <- i
+  df_list <- c(df_list, list(new_df))
+}
+```
+
 ```{r red lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else {
-  mut_freq <- rep(0, 566)
-  mut_list <- vector(mode = "character", length = 566)
-  mut_list_unique <- vector(mode = "character", length = 566)
-  
-  for (i in red_table["Mutations"]){
-    for(j in i){
-      # get number of mutations at every position
-      ind <- as.integer(str_sub(j, 2, -2))
-      mut_freq[ind] <- mut_freq[ind] + 1
-      # get list of mutations at every position
-      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-    }
-  }
-  
-  pos <- 1
-  for (i in mut_list){
-    split <- str_split_1(i, " ")
-    p <- 1
-    for (k in split){
-      if (grepl("\\*", k) == TRUE){
-        split[p] <- paste("\\", k, sep = "")
-        print(split[k])
+  data <- data.frame()
+  for (df in df_list){
+    mut_freq <- rep(0, 566)
+    mut_list <- vector(mode = "character", length = 566)
+    mut_list_unique <- vector(mode = "character", length = 566)
+    
+    for (i in red_table["Mutations"]){
+      for(j in i){
+        # get number of mutations at every position
+        ind <- as.integer(str_sub(j, 2, -2))
+        mut_freq[ind] <- mut_freq[ind] + 1
+        # get list of mutations at every position
+        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
       }
-      p <- p + 1
     }
-    unique_mut <- stri_unique(split)
-    for (j in unique_mut[-length(unique_mut)]){
-      count <- str_count(i, j)
-      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    
+    pos <- 1
+    for (i in mut_list){
+      split <- str_split_1(i, " ")
+      p <- 1
+      for (k in split){
+        if (grepl("\\*", k) == TRUE){
+          split[p] <- paste("\\", k, sep = "")
+          print(split[k])
+        }
+        p <- p + 1
+      }
+      unique_mut <- stri_unique(split)
+      for (j in unique_mut[-length(unique_mut)]){
+        count <- str_count(i, j)
+        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+      }
+      pos <- pos + 1
     }
-    pos <- pos + 1
+    
+    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
+    data <- rbind(data, data_temp)
   }
-  
-  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
   
   ggplot <- ggplot(
     data[which(data$y > 0),], 
     aes(
       x=x, 
       y=y, 
-      list=list, 
+      list=list,
+      color=group,
       text=paste0(
         "<b>AA Position: </b>", x, 
         "<br><b># of Mutations: </b>", y, 
@@ -215,9 +280,19 @@ if (nrow(red_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  ggplotly(
-    ggplot,
-    tooltip = c("text")
+  p <- ggplotly(ggplot, tooltip = c("text"))
+  
+  p %>% layout(
+    updatemenus=list(
+      list(
+        active = 0, 
+        x=0, 
+        y=1.1,
+        xanchor="left",
+        yanchor="bottom",
+        buttons=button_list
+      )
+    )
   )
 }
 ```
@@ -277,7 +352,7 @@ if (nrow(red_table) == 0){
   df_names <- cbind(red_table, names)
   names(df_names)[5] <- "Isolate_Name"
   for (j in 1:length(df_names$ID)){
-    df_names$Isolate_Name[j] <- str_split_i(df_names$ID[j], "\\|", 3)
+    df_names$Isolate_Name[j] <- trimws(str_split_i(df_names$ID[j], "\\|", 3))
   }
   
   df_mutations_filtered <- merge(metadata, df_names, by="Isolate_Name") %>%
@@ -301,23 +376,37 @@ if (nrow(red_table) == 0){
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
-  plot.data <- df_mutations_grouped  %>% 
+  pos <- c()
+  for (i in df_mutations_grouped["aa_profile"]){
+    # get position of mutation
+    ind <- as.integer(str_sub(i, 2, -2))
+    pos <- c(pos, ind)
+  }
+  df_mutations_grouped$position <- pos
+  
+  df_mutations_sorted <- df_mutations_grouped %>%
+    arrange(position)
+  
+  plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
+  aa_tick <- unique(plot.data$aa_profile)
+  
   plot_ly(
-    plot.data, y=~week, x=~aa_profile, z=~freq, 
+    plot.data, x=~week, y=~aa_profile, z=~freq, 
     reversescale=TRUE, 
     xgap=1.5, ygap=1.5, 
     type="heatmap", 
     colorbar=list(
-      title=('<b>freq</b>')), 
+      title=('<b>Freq</b>')), 
       hoverinfo='text', 
       text=~paste0("<b>Week: </b>", .data$week, "<br><b>Mutation: </b>", .data$aa_profile, "<br><b># of Mutations: </b>", .data$freq)
     ) %>% 
     layout(
       plot_bgcolor="#F8F8F8", 
-      yaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      xaxis=list(nticks=nrow(plot.data), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="category descending", tickangle=-45)
+      xaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(nticks=length(aa_tick), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="trace"),
+      legend=list(orientation='v', xanchor="right", yanchor="top")
     ) 
 }
 ```
@@ -353,51 +442,97 @@ cat(paste0('> ', 'Sequences in Group ORANGE: ', nrow(orange_table)))
 
 ### Lollipop Plot
 
+```{r orange clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+clade <- c()
+for(i in orange_table$ID){
+  new_clade <- variant_table[variant_table$ID == i, "clade"]
+  clade <- c(clade, new_clade[[1]])
+}
+clade_df <- orange_table
+clade_df$clade <- clade
+clade_unique <- unique(clade)
+clade_len <- length(unique(clade))
+
+bool_list <- list()
+for (i in 1:(clade_len)){
+  new_list <- rep(TRUE, (clade_len))
+  #new_list[i] <- TRUE
+  bool_list[[i]] <- new_list
+}
+
+button_list <- list(
+  label = "All sequences",
+  method = "update",
+  args = list(list(visible=TRUE), list(title="All sequences"))
+)
+for (i in 1:clade_len){
+  list_clade <- list(
+    label = clade_unique[[i]],
+    method = "update",
+    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
+  )
+  button_list <- list(button_list, list_clade)
+}
+
+clade_df$group <- "All Sequences"
+df_list <- list(clade_df)
+for (i in clade_unique){
+  new_df <- subset(clade_df, clade == i)
+  new_df$group <- i
+  df_list <- c(df_list, list(new_df))
+}
+```
+
 ```{r orange lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
-  mut_freq <- rep(0, 566)
-  mut_list <- vector(mode = "character", length = 566)
-  mut_list_unique <- vector(mode = "character", length = 566)
-  
-  for (i in orange_table["Mutations"]){
-    for(j in i){
-      # get number of mutations at every position
-      ind <- as.integer(str_sub(j, 2, -2))
-      mut_freq[ind] <- mut_freq[ind] + 1
-      # get list of mutations at every position
-      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-    }
-  }
-  
-  pos <- 1
-  for (i in mut_list){
-    split <- str_split_1(i, " ")
-    p <- 1
-    for (k in split){
-      if (grepl("\\*", k) == TRUE){
-        split[p] <- paste("\\", k, sep = "")
-        print(split[k])
+  data <- data.frame()
+  for (df in df_list){
+    mut_freq <- rep(0, 566)
+    mut_list <- vector(mode = "character", length = 566)
+    mut_list_unique <- vector(mode = "character", length = 566)
+    
+    for (i in orange_table["Mutations"]){
+      for(j in i){
+        # get number of mutations at every position
+        ind <- as.integer(str_sub(j, 2, -2))
+        mut_freq[ind] <- mut_freq[ind] + 1
+        # get list of mutations at every position
+        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
       }
-      p <- p + 1
     }
-    unique_mut <- stri_unique(split)
-    for (j in unique_mut[-length(unique_mut)]){
-      count <- str_count(i, j)
-      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    
+    pos <- 1
+    for (i in mut_list){
+      split <- str_split_1(i, " ")
+      p <- 1
+      for (k in split){
+        if (grepl("\\*", k) == TRUE){
+          split[p] <- paste("\\", k, sep = "")
+          print(split[k])
+        }
+        p <- p + 1
+      }
+      unique_mut <- stri_unique(split)
+      for (j in unique_mut[-length(unique_mut)]){
+        count <- str_count(i, j)
+        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+      }
+      pos <- pos + 1
     }
-    pos <- pos + 1
+    
+    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
+    data <- rbind(data, data_temp)
   }
-  
-  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
   
   ggplot <- ggplot(
     data[which(data$y > 0),], 
     aes(
       x=x, 
       y=y, 
-      list=list, 
+      list=list,
+      color=group,
       text=paste0(
         "<b>AA Position: </b>", x, 
         "<br><b># of Mutations: </b>", y, 
@@ -417,9 +552,19 @@ if (nrow(orange_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  ggplotly(
-    ggplot,
-    tooltip = c("text")
+  p <- ggplotly(ggplot, tooltip = c("text"))
+  
+  p %>% layout(
+    updatemenus=list(
+      list(
+        active = 0, 
+        x=0, 
+        y=1.1,
+        xanchor="left",
+        yanchor="bottom",
+        buttons=button_list
+      )
+    )
   )
 }
 ```
@@ -502,23 +647,37 @@ if (nrow(orange_table) == 0){
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
-  plot.data <- df_mutations_grouped  %>% 
+  pos <- c()
+  for (i in df_mutations_grouped["aa_profile"]){
+    # get position of mutation
+    ind <- as.integer(str_sub(i, 2, -2))
+    pos <- c(pos, ind)
+  }
+  df_mutations_grouped$position <- pos
+  
+  df_mutations_sorted <- df_mutations_grouped %>%
+    arrange(position)
+  
+  plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
+  aa_tick <- unique(plot.data$aa_profile)
+  
   plot_ly(
-    plot.data, y=~week, x=~aa_profile, z=~freq, 
+    plot.data, x=~week, y=~aa_profile, z=~freq, 
     reversescale=TRUE, 
     xgap=1.5, ygap=1.5, 
     type="heatmap", 
     colorbar=list(
-      title=('<b>freq</b>')), 
+      title=('<b>Freq</b>')), 
       hoverinfo='text', 
       text=~paste0("<b>Week: </b>", .data$week, "<br><b>Mutation: </b>", .data$aa_profile, "<br><b># of Mutations: </b>", .data$freq)
     ) %>% 
     layout(
       plot_bgcolor="#F8F8F8", 
-      yaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      xaxis=list(nticks=nrow(plot.data), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="category descending", tickangle=-45)
+      xaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(nticks=length(aa_tick), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="trace"),
+      legend=list(orientation='v', xanchor="right", yanchor="top")
     ) 
 }
 ```
@@ -555,50 +714,96 @@ cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 
 ### Lollipop Plot
 
+```{r yellow clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+clade <- c()
+for(i in yellow_table$ID){
+  new_clade <- variant_table[variant_table$ID == i, "clade"]
+  clade <- c(clade, new_clade[[1]])
+}
+clade_df <- yellow_table
+clade_df$clade <- clade
+clade_unique <- unique(clade)
+clade_len <- length(unique(clade))
+
+bool_list <- list()
+for (i in 1:(clade_len)){
+  new_list <- rep(TRUE, (clade_len))
+  bool_list[[i]] <- new_list
+}
+
+button_list <- list(
+  label = "All sequences",
+  method = "update",
+  args = list(list(visible=TRUE), list(title="All sequences"))
+)
+for (i in 1:clade_len){
+  list_clade <- list(
+    label = clade_unique[[i]],
+    method = "update",
+    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
+  )
+  button_list <- list(button_list, list_clade)
+}
+
+clade_df$group <- "All Sequences"
+df_list <- list(clade_df)
+for (i in clade_unique){
+  new_df <- subset(clade_df, clade == i)
+  new_df$group <- i
+  df_list <- c(df_list, list(new_df))
+}
+```
+
 ```{r yellow lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else {
-  mut_freq <- rep(0, 566)
-  mut_list <- vector(mode = "character", length = 566)
-  mut_list_unique <- vector(mode = "character", length = 566)
-  
-  for (i in yellow_table["Mutations"]){
-    for(j in i){
-      # get number of mutations at every position
-      ind <- as.integer(str_sub(j, 2, -2))
-      mut_freq[ind] <- mut_freq[ind] + 1
-      # get list of mutations at every position
-      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-    }
-  }
-  
-  pos <- 1
-  for (i in mut_list){
-    split <- str_split_1(i, " ")
-    p <- 1
-    for (k in split){
-      if (grepl("\\*", k) == TRUE){
-        split[p] <- paste("\\", k, sep = "")
+  data <- data.frame()
+  for (df in df_list){
+    mut_freq <- rep(0, 566)
+    mut_list <- vector(mode = "character", length = 566)
+    mut_list_unique <- vector(mode = "character", length = 566)
+    
+    for (i in yellow_table["Mutations"]){
+      for(j in i){
+        # get number of mutations at every position
+        ind <- as.integer(str_sub(j, 2, -2))
+        mut_freq[ind] <- mut_freq[ind] + 1
+        # get list of mutations at every position
+        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
       }
-      p <- p + 1
     }
-    unique_mut <- stri_unique(split)
-    for (j in unique_mut[-length(unique_mut)]){
-      count <- str_count(i, j)
-      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    
+    pos <- 1
+    for (i in mut_list){
+      split <- str_split_1(i, " ")
+      p <- 1
+      for (k in split){
+        if (grepl("\\*", k) == TRUE){
+          split[p] <- paste("\\", k, sep = "")
+          print(split[k])
+        }
+        p <- p + 1
+      }
+      unique_mut <- stri_unique(split)
+      for (j in unique_mut[-length(unique_mut)]){
+        count <- str_count(i, j)
+        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+      }
+      pos <- pos + 1
     }
-    pos <- pos + 1
+    
+    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
+    data <- rbind(data, data_temp)
   }
-  
-  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
   
   ggplot <- ggplot(
     data[which(data$y > 0),], 
     aes(
       x=x, 
       y=y, 
-      list=list, 
+      list=list,
+      color=group,
       text=paste0(
         "<b>AA Position: </b>", x, 
         "<br><b># of Mutations: </b>", y, 
@@ -612,15 +817,25 @@ if (nrow(yellow_table) == 0){
     theme(
       panel.grid.major.x = element_blank(),
       panel.border = element_blank(),
-      axis.ticks.x = element_blank()  
+      axis.ticks.x = element_blank()
     ) +
     xlab("Amino Acid Position") +
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  ggplotly(
-    ggplot,
-    tooltip = c("text")
+  p <- ggplotly(ggplot, tooltip = c("text"))
+  
+  p %>% layout(
+    updatemenus=list(
+      list(
+        active = 0, 
+        x=0, 
+        y=1.1,
+        xanchor="left",
+        yanchor="bottom",
+        buttons=button_list
+      )
+    )
   )
 }
 ```
@@ -703,23 +918,37 @@ if (nrow(yellow_table) == 0){
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
-  plot.data <- df_mutations_grouped  %>% 
+  pos <- c()
+  for (i in df_mutations_grouped["aa_profile"]){
+    # get position of mutation
+    ind <- as.integer(str_sub(i, 2, -2))
+    pos <- c(pos, ind)
+  }
+  df_mutations_grouped$position <- pos
+  
+  df_mutations_sorted <- df_mutations_grouped %>%
+    arrange(position)
+  
+  plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
+  aa_tick <- unique(plot.data$aa_profile)
+  
   plot_ly(
-    plot.data, y=~week, x=~aa_profile, z=~freq, 
+    plot.data, x=~week, y=~aa_profile, z=~freq, 
     reversescale=TRUE, 
     xgap=1.5, ygap=1.5, 
     type="heatmap", 
     colorbar=list(
-      title=('<b>freq</b>')), 
+      title=('<b>Freq</b>')), 
       hoverinfo='text', 
       text=~paste0("<b>Week: </b>", .data$week, "<br><b>Mutation: </b>", .data$aa_profile, "<br><b># of Mutations: </b>", .data$freq)
     ) %>% 
     layout(
       plot_bgcolor="#F8F8F8", 
-      yaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      xaxis=list(nticks=nrow(plot.data), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="category descending", tickangle=-45)
+      xaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(nticks=length(aa_tick), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="trace"),
+      legend=list(orientation='v', xanchor="right", yanchor="top")
     ) 
 }
 ```
@@ -755,51 +984,97 @@ cat(paste0('> ', 'Sequences in Group GREY: ', nrow(grey_table)))
 
 ### Lollipop Plot
 
+```{r grey clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+clade <- c()
+for(i in grey_table$ID){
+  new_clade <- variant_table[variant_table$ID == i, "clade"]
+  clade <- c(clade, new_clade[[1]])
+}
+clade_df <- grey_table
+clade_df$clade <- clade
+clade_unique <- unique(clade)
+clade_len <- length(unique(clade))
+
+bool_list <- list()
+for (i in 1:(clade_len)){
+  new_list <- rep(TRUE, (clade_len))
+  #new_list[i] <- TRUE
+  bool_list[[i]] <- new_list
+}
+
+button_list <- list(
+  label = "All sequences",
+  method = "update",
+  args = list(list(visible=TRUE), list(title="All sequences"))
+)
+for (i in 1:clade_len){
+  list_clade <- list(
+    label = clade_unique[[i]],
+    method = "update",
+    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
+  )
+  button_list <- list(button_list, list_clade)
+}
+
+clade_df$group <- "All Sequences"
+df_list <- list(clade_df)
+for (i in clade_unique){
+  new_df <- subset(clade_df, clade == i)
+  new_df$group <- i
+  df_list <- c(df_list, list(new_df))
+}
+```
+
 ```{r grey lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(grey_table) == 0){
   cat("No sequences in Group GREY")
 } else {
-  mut_freq <- rep(0, 566)
-  mut_list <- vector(mode = "character", length = 566)
-  mut_list_unique <- vector(mode = "character", length = 566)
-  
-  for (i in grey_table["Mutations"]){
-    for(j in i){
-      # get number of mutations at every position
-      ind <- as.integer(str_sub(j, 2, -2))
-      mut_freq[ind] <- mut_freq[ind] + 1
-      # get list of mutations at every position
-      mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-    }
-  }
-  
-  pos <- 1
-  for (i in mut_list){
-    split <- str_split_1(i, " ")
-    p <- 1
-    for (k in split){
-      if (grepl("\\*", k) == TRUE){
-        split[p] <- paste("\\", k, sep = "")
-        print(split[k])
+  data <- data.frame()
+  for (df in df_list){
+    mut_freq <- rep(0, 566)
+    mut_list <- vector(mode = "character", length = 566)
+    mut_list_unique <- vector(mode = "character", length = 566)
+    
+    for (i in grey_table["Mutations"]){
+      for(j in i){
+        # get number of mutations at every position
+        ind <- as.integer(str_sub(j, 2, -2))
+        mut_freq[ind] <- mut_freq[ind] + 1
+        # get list of mutations at every position
+        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
       }
-      p <- p + 1
     }
-    unique_mut <- stri_unique(split)
-    for (j in unique_mut[-length(unique_mut)]){
-      count <- str_count(i, j)
-      mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+    
+    pos <- 1
+    for (i in mut_list){
+      split <- str_split_1(i, " ")
+      p <- 1
+      for (k in split){
+        if (grepl("\\*", k) == TRUE){
+          split[p] <- paste("\\", k, sep = "")
+          print(split[k])
+        }
+        p <- p + 1
+      }
+      unique_mut <- stri_unique(split)
+      for (j in unique_mut[-length(unique_mut)]){
+        count <- str_count(i, j)
+        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+      }
+      pos <- pos + 1
     }
-    pos <- pos + 1
+    
+    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
+    data <- rbind(data, data_temp)
   }
-  
-  data <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique)
   
   ggplot <- ggplot(
     data[which(data$y > 0),], 
     aes(
       x=x, 
       y=y, 
-      list=list, 
+      list=list,
+      color=group,
       text=paste0(
         "<b>AA Position: </b>", x, 
         "<br><b># of Mutations: </b>", y, 
@@ -813,15 +1088,25 @@ if (nrow(grey_table) == 0){
     theme(
       panel.grid.major.x = element_blank(),
       panel.border = element_blank(),
-      axis.ticks.x = element_blank(),
+      axis.ticks.x = element_blank()
     ) +
     xlab("Amino Acid Position") +
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  ggplotly(
-    ggplot,
-    tooltip = c("text")
+  p <- ggplotly(ggplot, tooltip = c("text"))
+  
+  p %>% layout(
+    updatemenus=list(
+      list(
+        active = 0, 
+        x=0, 
+        y=1.1,
+        xanchor="left",
+        yanchor="bottom",
+        buttons=button_list
+      )
+    )
   )
 }
 ```
@@ -904,23 +1189,37 @@ if (nrow(grey_table) == 0){
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
-  plot.data <- df_mutations_grouped  %>% 
+  pos <- c()
+  for (i in df_mutations_grouped["aa_profile"]){
+    # get position of mutation
+    ind <- as.integer(str_sub(i, 2, -2))
+    pos <- c(pos, ind)
+  }
+  df_mutations_grouped$position <- pos
+  
+  df_mutations_sorted <- df_mutations_grouped %>%
+    arrange(position)
+  
+  plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
+  aa_tick <- unique(plot.data$aa_profile)
+  
   plot_ly(
-    plot.data, y=~week, x=~aa_profile, z=~freq, 
+    plot.data, x=~week, y=~aa_profile, z=~freq, 
     reversescale=TRUE, 
     xgap=1.5, ygap=1.5, 
     type="heatmap", 
     colorbar=list(
-      title=('<b>freq</b>')), 
+      title=('<b>Freq</b>')), 
       hoverinfo='text', 
       text=~paste0("<b>Week: </b>", .data$week, "<br><b>Mutation: </b>", .data$aa_profile, "<br><b># of Mutations: </b>", .data$freq)
     ) %>% 
     layout(
       plot_bgcolor="#F8F8F8", 
-      yaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      xaxis=list(nticks=nrow(plot.data), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="category descending", tickangle=-45)
+      xaxis=list(title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(nticks=length(aa_tick), title="<b>Mutation</b>", showgrid=FALSE, categoryorder="trace"),
+      legend=list(orientation='v', xanchor="right", yanchor="top")
     ) 
 }
 ```

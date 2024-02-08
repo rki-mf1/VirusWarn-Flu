@@ -4,6 +4,7 @@ process REPORT {
     publishDir "${params.output}/${params.report_dir}", mode: params.publish_dir_mode
 
     input:
+        path variant_table
         path variants_phenotypes
         path rmd
         path input_fasta
@@ -33,6 +34,7 @@ process REPORT {
         params = list(
             fasta = \'${input_fasta}\', \\
             metadata = \'${metadata}\', \\
+            variant_table = \'${variant_table}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
             alert_clusters = \'fluwarnsystem-alerts-clusters-summaries-all.csv\', \\
             subtype = \'${subtype}\', \\
