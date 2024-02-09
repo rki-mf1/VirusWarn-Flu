@@ -13,11 +13,11 @@ def get_pos_start(
     numbers = re.findall(r'\d+', text)
     return int(numbers[0]) if numbers else None
 
-def get_pos_end(
-        text: str
-    ) -> int:
-    numbers = re.findall(r'\d+', text)
-    return int(numbers[1]) if numbers else None
+#def get_pos_end(
+#        text: str
+#    ) -> int:
+#    numbers = re.findall(r'\d+', text)
+#    return int(numbers[1]) if numbers else None
 
 def change_numbering(
     pattern: str,
@@ -64,16 +64,21 @@ def build_dataframe(
         df_temp["variant_type"] = "M"
         df_temp["aa_pos_ref_start"] = df_temp['aa_pattern'].apply(get_pos_start)
         df_temp["aa_pos_ref_end"] = df_temp["aa_pos_ref_start"]
+        df_temp["variant_size"] = 1
     elif column == "aaDeletions":
         df_temp["variant_type"] = "D"
         df_temp["aa_pos_ref_start"] = df_temp['aa_pattern'].apply(get_pos_start)
-        df_temp["aa_pos_ref_end"] = df_temp['aa_pattern'].apply(get_pos_end)
+        #df_temp["aa_pos_ref_end"] = df_temp['aa_pattern'].apply(get_pos_end)
+        df_temp["aa_pos_ref_end"] = np.NaN
+        df_temp["variant_size"] = np.NaN
     elif column == "aaInsertions":
         df_temp["variant_type"] = "I"
         df_temp["aa_pos_ref_start"] = df_temp['aa_pattern'].apply(get_pos_start)
-        df_temp["aa_pos_ref_end"] = df_temp['aa_pattern'].apply(get_pos_end)
+        #df_temp["aa_pos_ref_end"] = df_temp['aa_pattern'].apply(get_pos_end)
+        df_temp["aa_pos_ref_end"] = np.NaN
+        df_temp["variant_size"] = np.NaN
 
-    df_temp["variant_size"] = (df_temp["aa_pos_ref_end"] - df_temp["aa_pos_ref_start"]) + 1
+    #df_temp["variant_size"] = (df_temp["aa_pos_ref_end"] - df_temp["aa_pos_ref_start"]) + 1
 
     # Set columns that can't be reproduced to NaN
     df_temp["variant_start_aligned"] = np.NaN

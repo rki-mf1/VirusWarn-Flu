@@ -218,6 +218,17 @@ def main():
             'RegionOfInterest', 
             '',
         ] 
+        df_variant_with_annot_small.loc[len(df_variant_with_annot.index)+1] = [
+            'NotAnnotated_ERROR_CATCH',	
+            '',
+            '',
+            '',
+            0,	
+            '',	
+            0,	
+            'NotAnnotated', 
+            '',
+        ] 
         
         df_variant_with_annot_small.to_csv(out_table, sep="\t", index=False)
 
