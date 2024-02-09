@@ -36,7 +36,6 @@ process REPORT {
             metadata = \'${metadata}\', \\
             variant_table = \'${variant_table}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
-            alert_clusters = \'fluwarnsystem-alerts-clusters-summaries-all.csv\', \\
             subtype = \'${subtype}\', \\
             ref = \'${params.ref}\', \\
             moc = \'${moc_table}\', \\

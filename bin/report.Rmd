@@ -8,7 +8,6 @@ params:
   metadata: ""
   variant_table: "variant_table.tsv"
   alert_samples: "fluwarnsystem-alerts-samples-all.csv"
-  alert_clusters: "fluwarnsystem-alerts-clusters-summaries-all.csv"
   subtype: ""
   ref: ""
   moc: ""
@@ -88,7 +87,6 @@ fasta <- read.fasta(params$fasta)
 
 variant_table <- read.delim(params$variant_table)
 samples <- read.delim(params$alert_samples, sep = ',')
-clusters <- read.delim(params$alert_clusters, sep = ',')
 
 moc <- read.delim(params$moc)
 roi <- read.delim(params$roi, sep = ',')
@@ -100,24 +98,7 @@ if (params$metadata != ""){
 
 ```{r remove, include=FALSE}
 samples <- samples %>%
-  filter(!ID %in% 'ROI_ERROR_CATCH')
-```
-
-```{r functions, include=FALSE}
-create_button_list <- function(groups) {
-  button_list <- list()
-  for (i in seq_along(groups)) {
-    button <- list(
-      label = groups[i],
-      method = "update",
-      args = list(list(visible = rep(FALSE, length(groups))),
-                  list(title = groups[i])),
-      visible = TRUE
-    )
-    button_list[[i]] <- button
-  }
-  return(button_list)
-}
+  filter(!ID %in% c('ROI_ERROR_CATCH', 'NotAnnotated_ERROR_CATCH'))
 ```
 
 
@@ -170,58 +151,36 @@ cat(paste0('> ', 'Sequences in Group RED: ', nrow(red_table)))
 
 ### Lollipop Plot
 
-```{r red clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-clade <- c()
-for(i in red_table$ID){
-  new_clade <- variant_table[variant_table$ID == i, "clade"]
-  clade <- c(clade, new_clade[[1]])
-}
-clade_df <- red_table
-clade_df$clade <- clade
-clade_unique <- unique(clade)
-clade_len <- length(unique(clade))
-
-bool_list <- list()
-for (i in 1:(clade_len)){
-  new_list <- rep(TRUE, (clade_len))
-  #new_list[i] <- TRUE
-  bool_list[[i]] <- new_list
-}
-
-button_list <- list(
-  label = "All sequences",
-  method = "update",
-  args = list(list(visible=TRUE), list(title="All sequences"))
-)
-for (i in 1:clade_len){
-  list_clade <- list(
-    label = clade_unique[[i]],
-    method = "update",
-    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
-  )
-  button_list <- list(button_list, list_clade)
-}
-
-clade_df$group <- "All Sequences"
-df_list <- list(clade_df)
-for (i in clade_unique){
-  new_df <- subset(clade_df, clade == i)
-  new_df$group <- i
-  df_list <- c(df_list, list(new_df))
-}
-```
-
-```{r red lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r red lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else {
-  data <- data.frame()
+  clade <- c()
+  for(i in red_table$ID){
+    new_clade <- variant_table[variant_table$ID == i, "clade"]
+    clade <- c(clade, new_clade[[1]])
+  }
+  
+  clade_df <- red_table
+  clade_df$clade <- clade
+  clade_df$group <- "All Sequences"
+  clade_unique <- unique(clade)
+  clade_len <- length(unique(clade))
+  
+  df_list <- list(clade_df)
+  for (i in clade_unique){
+    new_df <- subset(clade_df, clade == i)
+    new_df$group <- i
+    df_list <- c(df_list, list(new_df))
+  }
+  
+  groups <- c()
+  data_list <- list()
   for (df in df_list){
     mut_freq <- rep(0, 566)
     mut_list <- vector(mode = "character", length = 566)
     mut_list_unique <- vector(mode = "character", length = 566)
-    
-    for (i in red_table["Mutations"]){
+    for (i in df["Mutations"]){
       for(j in i){
         # get number of mutations at every position
         ind <- as.integer(str_sub(j, 2, -2))
@@ -251,25 +210,23 @@ if (nrow(red_table) == 0){
     }
     
     data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
-    data <- rbind(data, data_temp)
+    groups <- c(groups, df$group[1])
+    data_list <- c(data_list, list(data_temp))
   }
   
-  ggplot <- ggplot(
-    data[which(data$y > 0),], 
-    aes(
-      x=x, 
-      y=y, 
-      list=list,
-      color=group,
-      text=paste0(
-        "<b>AA Position: </b>", x, 
-        "<br><b># of Mutations: </b>", y, 
-        "<br><b>Mutations: </b>", list
-        )
-      )
-    ) +
-    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-    geom_point( color="red", size=3 ) +
+  all_false <- rep(FALSE, length(groups)*2)
+  button_list <- list()
+  for (i in 1:length(groups)) {
+    visibility_state <- all_false
+    visibility_state[(2 * i - 1):(i + i)] <- TRUE
+    button_list[[i]] <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = visibility_state), list(title = groups[i]))
+    )
+  }
+  
+  p <- ggplot() +
     theme_light() +
     theme(
       panel.grid.major.x = element_blank(),
@@ -280,12 +237,30 @@ if (nrow(red_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  p <- ggplotly(ggplot, tooltip = c("text"))
+  for (i in 1:length(groups)) {
+    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
+    row.names(d) <- seq(nrow(d))
+    p <- p + 
+      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+      geom_point(
+        data = d, 
+        aes(
+          x=x, y=y, 
+          text=paste0(
+          "<b>AA Position: </b>", x, 
+          "<br><b># of Mutations: </b>", y, 
+          "<br><b>Mutations: </b>", list
+          )
+        ),
+        color="red",
+        size=3
+      )
+  }
   
-  p %>% layout(
+  ggplotly(p, tooltip = c("text")) %>% layout(
     updatemenus=list(
       list(
-        active = 0, 
+        active=0, 
         x=0, 
         y=1.1,
         xanchor="left",
@@ -341,7 +316,7 @@ if (nrow(red_table) == 0){
 
 ### Heatmap
 
-```{r red heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r red heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else if (params$metadata == ""){
@@ -442,58 +417,36 @@ cat(paste0('> ', 'Sequences in Group ORANGE: ', nrow(orange_table)))
 
 ### Lollipop Plot
 
-```{r orange clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-clade <- c()
-for(i in orange_table$ID){
-  new_clade <- variant_table[variant_table$ID == i, "clade"]
-  clade <- c(clade, new_clade[[1]])
-}
-clade_df <- orange_table
-clade_df$clade <- clade
-clade_unique <- unique(clade)
-clade_len <- length(unique(clade))
-
-bool_list <- list()
-for (i in 1:(clade_len)){
-  new_list <- rep(TRUE, (clade_len))
-  #new_list[i] <- TRUE
-  bool_list[[i]] <- new_list
-}
-
-button_list <- list(
-  label = "All sequences",
-  method = "update",
-  args = list(list(visible=TRUE), list(title="All sequences"))
-)
-for (i in 1:clade_len){
-  list_clade <- list(
-    label = clade_unique[[i]],
-    method = "update",
-    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
-  )
-  button_list <- list(button_list, list_clade)
-}
-
-clade_df$group <- "All Sequences"
-df_list <- list(clade_df)
-for (i in clade_unique){
-  new_df <- subset(clade_df, clade == i)
-  new_df$group <- i
-  df_list <- c(df_list, list(new_df))
-}
-```
-
-```{r orange lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r orange lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
-  data <- data.frame()
+  clade <- c()
+  for(i in orange_table$ID){
+    new_clade <- variant_table[variant_table$ID == i, "clade"]
+    clade <- c(clade, new_clade[[1]])
+  }
+  
+  clade_df <- orange_table
+  clade_df$clade <- clade
+  clade_df$group <- "All Sequences"
+  clade_unique <- unique(clade)
+  clade_len <- length(unique(clade))
+  
+  df_list <- list(clade_df)
+  for (i in clade_unique){
+    new_df <- subset(clade_df, clade == i)
+    new_df$group <- i
+    df_list <- c(df_list, list(new_df))
+  }
+  
+  groups <- c()
+  data_list <- list()
   for (df in df_list){
     mut_freq <- rep(0, 566)
     mut_list <- vector(mode = "character", length = 566)
     mut_list_unique <- vector(mode = "character", length = 566)
-    
-    for (i in orange_table["Mutations"]){
+    for (i in df["Mutations"]){
       for(j in i){
         # get number of mutations at every position
         ind <- as.integer(str_sub(j, 2, -2))
@@ -523,25 +476,23 @@ if (nrow(orange_table) == 0){
     }
     
     data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
-    data <- rbind(data, data_temp)
+    groups <- c(groups, df$group[1])
+    data_list <- c(data_list, list(data_temp))
   }
   
-  ggplot <- ggplot(
-    data[which(data$y > 0),], 
-    aes(
-      x=x, 
-      y=y, 
-      list=list,
-      color=group,
-      text=paste0(
-        "<b>AA Position: </b>", x, 
-        "<br><b># of Mutations: </b>", y, 
-        "<br><b>Mutations: </b>", list
-        )
-      )
-    ) +
-    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-    geom_point( color="orange", size=3 ) +
+  all_false <- rep(FALSE, length(groups)*2)
+  button_list <- list()
+  for (i in 1:length(groups)) {
+    visibility_state <- all_false
+    visibility_state[(2 * i - 1):(i + i)] <- TRUE
+    button_list[[i]] <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = visibility_state), list(title = groups[i]))
+    )
+  }
+  
+  p <- ggplot() +
     theme_light() +
     theme(
       panel.grid.major.x = element_blank(),
@@ -552,12 +503,30 @@ if (nrow(orange_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  p <- ggplotly(ggplot, tooltip = c("text"))
+  for (i in 1:length(groups)) {
+    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
+    row.names(d) <- seq(nrow(d))
+    p <- p + 
+      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+      geom_point(
+        data = d, 
+        aes(
+          x=x, y=y, 
+          text=paste0(
+          "<b>AA Position: </b>", x, 
+          "<br><b># of Mutations: </b>", y, 
+          "<br><b>Mutations: </b>", list
+          )
+        ),
+        color="orange",
+        size=3
+      )
+  }
   
-  p %>% layout(
+  ggplotly(p, tooltip = c("text")) %>% layout(
     updatemenus=list(
       list(
-        active = 0, 
+        active=0, 
         x=0, 
         y=1.1,
         xanchor="left",
@@ -613,7 +582,7 @@ if (nrow(orange_table) == 0){
 
 ### Heatmap
 
-```{r orange heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r orange heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else if (params$metadata == ""){
@@ -690,7 +659,7 @@ if (nrow(orange_table) == 0){
 #### *Sequences with 0 MOC and 8 or more ROI and 24 or less PM*
 
 ```{r yellow data, echo=FALSE, message=FALSE, warning=FALSE}
-yellow_table <- filter(samples, alert_level == 'yellow') %>%
+yellow_table <- filter(samples, alert_level == '#FFEA00') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
 for (i in yellow_table["ID"]) {
@@ -714,57 +683,36 @@ cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 
 ### Lollipop Plot
 
-```{r yellow clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-clade <- c()
-for(i in yellow_table$ID){
-  new_clade <- variant_table[variant_table$ID == i, "clade"]
-  clade <- c(clade, new_clade[[1]])
-}
-clade_df <- yellow_table
-clade_df$clade <- clade
-clade_unique <- unique(clade)
-clade_len <- length(unique(clade))
-
-bool_list <- list()
-for (i in 1:(clade_len)){
-  new_list <- rep(TRUE, (clade_len))
-  bool_list[[i]] <- new_list
-}
-
-button_list <- list(
-  label = "All sequences",
-  method = "update",
-  args = list(list(visible=TRUE), list(title="All sequences"))
-)
-for (i in 1:clade_len){
-  list_clade <- list(
-    label = clade_unique[[i]],
-    method = "update",
-    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
-  )
-  button_list <- list(button_list, list_clade)
-}
-
-clade_df$group <- "All Sequences"
-df_list <- list(clade_df)
-for (i in clade_unique){
-  new_df <- subset(clade_df, clade == i)
-  new_df$group <- i
-  df_list <- c(df_list, list(new_df))
-}
-```
-
-```{r yellow lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r yellow lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else {
-  data <- data.frame()
+  clade <- c()
+  for(i in yellow_table$ID){
+    new_clade <- variant_table[variant_table$ID == i, "clade"]
+    clade <- c(clade, new_clade[[1]])
+  }
+  
+  clade_df <- yellow_table
+  clade_df$clade <- clade
+  clade_df$group <- "All Sequences"
+  clade_unique <- unique(clade)
+  clade_len <- length(unique(clade))
+  
+  df_list <- list(clade_df)
+  for (i in clade_unique){
+    new_df <- subset(clade_df, clade == i)
+    new_df$group <- i
+    df_list <- c(df_list, list(new_df))
+  }
+  
+  groups <- c()
+  data_list <- list()
   for (df in df_list){
     mut_freq <- rep(0, 566)
     mut_list <- vector(mode = "character", length = 566)
     mut_list_unique <- vector(mode = "character", length = 566)
-    
-    for (i in yellow_table["Mutations"]){
+    for (i in df["Mutations"]){
       for(j in i){
         # get number of mutations at every position
         ind <- as.integer(str_sub(j, 2, -2))
@@ -794,25 +742,23 @@ if (nrow(yellow_table) == 0){
     }
     
     data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
-    data <- rbind(data, data_temp)
+    groups <- c(groups, df$group[1])
+    data_list <- c(data_list, list(data_temp))
   }
   
-  ggplot <- ggplot(
-    data[which(data$y > 0),], 
-    aes(
-      x=x, 
-      y=y, 
-      list=list,
-      color=group,
-      text=paste0(
-        "<b>AA Position: </b>", x, 
-        "<br><b># of Mutations: </b>", y, 
-        "<br><b>Mutations: </b>", list
-        )
-      )
-    ) +
-    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-    geom_point( color="#FFEA00", size=3 ) +
+  all_false <- rep(FALSE, length(groups)*2)
+  button_list <- list()
+  for (i in 1:length(groups)) {
+    visibility_state <- all_false
+    visibility_state[(2 * i - 1):(i + i)] <- TRUE
+    button_list[[i]] <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = visibility_state), list(title = groups[i]))
+    )
+  }
+  
+  p <- ggplot() +
     theme_light() +
     theme(
       panel.grid.major.x = element_blank(),
@@ -823,12 +769,30 @@ if (nrow(yellow_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  p <- ggplotly(ggplot, tooltip = c("text"))
+  for (i in 1:length(groups)) {
+    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
+    row.names(d) <- seq(nrow(d))
+    p <- p + 
+      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+      geom_point(
+        data = d, 
+        aes(
+          x=x, y=y, 
+          text=paste0(
+          "<b>AA Position: </b>", x, 
+          "<br><b># of Mutations: </b>", y, 
+          "<br><b>Mutations: </b>", list
+          )
+        ),
+        color="#FFEA00",
+        size=3
+      )
+  }
   
-  p %>% layout(
+  ggplotly(p, tooltip = c("text")) %>% layout(
     updatemenus=list(
       list(
-        active = 0, 
+        active=0, 
         x=0, 
         y=1.1,
         xanchor="left",
@@ -884,7 +848,7 @@ if (nrow(yellow_table) == 0){
 
 ### Heatmap
 
-```{r yellow heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r yellow heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else if (params$metadata == ""){
@@ -984,58 +948,36 @@ cat(paste0('> ', 'Sequences in Group GREY: ', nrow(grey_table)))
 
 ### Lollipop Plot
 
-```{r grey clades, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
-clade <- c()
-for(i in grey_table$ID){
-  new_clade <- variant_table[variant_table$ID == i, "clade"]
-  clade <- c(clade, new_clade[[1]])
-}
-clade_df <- grey_table
-clade_df$clade <- clade
-clade_unique <- unique(clade)
-clade_len <- length(unique(clade))
-
-bool_list <- list()
-for (i in 1:(clade_len)){
-  new_list <- rep(TRUE, (clade_len))
-  #new_list[i] <- TRUE
-  bool_list[[i]] <- new_list
-}
-
-button_list <- list(
-  label = "All sequences",
-  method = "update",
-  args = list(list(visible=TRUE), list(title="All sequences"))
-)
-for (i in 1:clade_len){
-  list_clade <- list(
-    label = clade_unique[[i]],
-    method = "update",
-    args = list(list(visible=bool_list[[i]]), list(title=clade_unique[[i]]))
-  )
-  button_list <- list(button_list, list_clade)
-}
-
-clade_df$group <- "All Sequences"
-df_list <- list(clade_df)
-for (i in clade_unique){
-  new_df <- subset(clade_df, clade == i)
-  new_df$group <- i
-  df_list <- c(df_list, list(new_df))
-}
-```
-
-```{r grey lollipop, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grey lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(grey_table) == 0){
   cat("No sequences in Group GREY")
 } else {
-  data <- data.frame()
+  clade <- c()
+  for(i in grey_table$ID){
+    new_clade <- variant_table[variant_table$ID == i, "clade"]
+    clade <- c(clade, new_clade[[1]])
+  }
+  
+  clade_df <- grey_table
+  clade_df$clade <- clade
+  clade_df$group <- "All Sequences"
+  clade_unique <- unique(clade)
+  clade_len <- length(unique(clade))
+  
+  df_list <- list(clade_df)
+  for (i in clade_unique){
+    new_df <- subset(clade_df, clade == i)
+    new_df$group <- i
+    df_list <- c(df_list, list(new_df))
+  }
+  
+  groups <- c()
+  data_list <- list()
   for (df in df_list){
     mut_freq <- rep(0, 566)
     mut_list <- vector(mode = "character", length = 566)
     mut_list_unique <- vector(mode = "character", length = 566)
-    
-    for (i in grey_table["Mutations"]){
+    for (i in df["Mutations"]){
       for(j in i){
         # get number of mutations at every position
         ind <- as.integer(str_sub(j, 2, -2))
@@ -1065,25 +1007,23 @@ if (nrow(grey_table) == 0){
     }
     
     data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, group = df$group[1])
-    data <- rbind(data, data_temp)
+    groups <- c(groups, df$group[1])
+    data_list <- c(data_list, list(data_temp))
   }
   
-  ggplot <- ggplot(
-    data[which(data$y > 0),], 
-    aes(
-      x=x, 
-      y=y, 
-      list=list,
-      color=group,
-      text=paste0(
-        "<b>AA Position: </b>", x, 
-        "<br><b># of Mutations: </b>", y, 
-        "<br><b>Mutations: </b>", list
-        )
-      )
-    ) +
-    geom_segment( aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-    geom_point( color="lightgrey", size=3 ) +
+  all_false <- rep(FALSE, length(groups)*2)
+  button_list <- list()
+  for (i in 1:length(groups)) {
+    visibility_state <- all_false
+    visibility_state[(2 * i - 1):(i + i)] <- TRUE
+    button_list[[i]] <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = visibility_state), list(title = groups[i]))
+    )
+  }
+  
+  p <- ggplot() +
     theme_light() +
     theme(
       panel.grid.major.x = element_blank(),
@@ -1094,12 +1034,30 @@ if (nrow(grey_table) == 0){
     ylab("Number of Mutations") +
     xlim(c(0,566))
   
-  p <- ggplotly(ggplot, tooltip = c("text"))
+  for (i in 1:length(groups)) {
+    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
+    row.names(d) <- seq(nrow(d))
+    p <- p + 
+      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+      geom_point(
+        data = d, 
+        aes(
+          x=x, y=y, 
+          text=paste0(
+          "<b>AA Position: </b>", x, 
+          "<br><b># of Mutations: </b>", y, 
+          "<br><b>Mutations: </b>", list
+          )
+        ),
+        color="lightgrey",
+        size=3
+      )
+  }
   
-  p %>% layout(
+  ggplotly(p, tooltip = c("text")) %>% layout(
     updatemenus=list(
       list(
-        active = 0, 
+        active=0, 
         x=0, 
         y=1.1,
         xanchor="left",
@@ -1155,7 +1113,7 @@ if (nrow(grey_table) == 0){
 
 ### Heatmap
 
-```{r grey heatmap, out.width="1400px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grey heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(grey_table) == 0){
   cat("No sequences in Group GREY")
 } else if (params$metadata == ""){
