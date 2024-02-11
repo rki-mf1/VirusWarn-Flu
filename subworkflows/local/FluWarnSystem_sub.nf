@@ -1,4 +1,5 @@
 include { NEXTCLADE }   from '../../modules/local/nextclade'
+include { QC }          from '../../modules/local/qc'
 include { ANNOTATION }  from '../../modules/local/annotation'
 include { REPORT }      from '../../modules/local/report'
 
@@ -8,10 +9,15 @@ workflow FLUWARNSYSTEM_SUB {
         moc_table
         roi_table
         rmd
+        qc_rmd
         metadata
 
     main:
         NEXTCLADE ( input_fasta, params.subtype )
+
+        if (params.qc) {
+            QC ( input_fasta, NEXTCLADE.out.nextclade, qc_rmd, params.subtype )
+        }
 
         ANNOTATION ( NEXTCLADE.out.variant_table, moc_table, roi_table )
 

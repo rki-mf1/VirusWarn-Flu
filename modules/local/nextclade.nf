@@ -8,8 +8,9 @@ process NEXTCLADE {
         val subtype
 
     output:
-        path "variant_table.tsv",   emit: variant_table
-        path "sigpep_table.tsv",    emit: sigpep_table
+        path "variant_table.tsv",       emit: variant_table
+        path "output/nextclade.csv",    emit: nextclade
+        path "sigpep_table.tsv",        emit: sigpep_table
 
     script:
     """

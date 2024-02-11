@@ -11,7 +11,7 @@ if (params.help) { exit 0, helpMSG() }
 Set valid_params = ['cores', 'max_cores', 'memory', 'help',
                     'fasta', 'ref', 'metadata', 'subtype', 
                     'qc', 'split',
-                    'output', 'split_dir', 'nextclade_dir', 
+                    'output', 'split_dir', 'qc_dir', 'nextclade_dir', 
                     'annot_dir', 'report_dir', 'runinfo_dir',
                     'publish_dir_mode', 'conda_cache_dir',
                     'cloudProcess', 'cloud-process']
@@ -41,6 +41,7 @@ workflow FLUWARNSYSTEM {
     input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
 
     rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
+    qc_rmd = Channel.fromPath( file("bin/qc-report.Rmd", checkIfExists: true) )
 
     if (params.metadata != '') {
         metadata = Channel.fromPath( file("${params.metadata}", checkIfExists: true) )
@@ -67,7 +68,7 @@ workflow FLUWARNSYSTEM {
             "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between h1n1, h3n2, vic!\n"
         }
 
-        FLUWARNSYSTEM_SUB ( input_fasta, moc_table, roi_table, rmd, metadata )
+        FLUWARNSYSTEM_SUB ( input_fasta, moc_table, roi_table, rmd, qc_rmd, metadata )
 
     } else if (params.split == 'FluPipe' || 'flupipe' || 'GISAID' || 'gisaid' || 'OpenFlu' || 'openflu') {
         log.info"INFO: FluWarnSystem is running in SPLIT mode $params.split"
@@ -87,7 +88,7 @@ workflow FLUWARNSYSTEM {
             moc_table_h1n1, roi_table_h1n1,
             moc_table_h3n2, roi_table_h3n2, 
             moc_table_vic, roi_table_vic, 
-            rmd, metadata 
+            rmd, qc_rmd, metadata 
         )
 
     } else {
@@ -130,8 +131,7 @@ def helpMSG() {
                         H3N2: A/Wisconsin/67/2005 (CY163680)
                         For Victoria, only B/Brisbane/60/2008 (KX058884) is available.
                         [ default: $params.ref ]                                     
-    ${c_green} --metadata ${c_reset}        The path to a metadata file in GISAID form for the sequences with 
-                        collection dates.
+    ${c_green} --metadata ${c_reset}        The path to a metadata file for the sequences with collection dates.
                         Required to generate a heatmap in the report.
                         [ default: $params.metadata ]
     ${c_green} --subtype ${c_reset}         If the input fasta file only contains sequences of one subtype, 
@@ -144,6 +144,8 @@ def helpMSG() {
                         ensure the use of the right references and tables.
                         Options: 'FluPipe', 'GISAID' and 'OpenFlu'
                         [ default: $params.split ]
+    ${c_green} --qc ${c_reset}              If set to true, a QC report will be generated from the Nextclade output.
+                        [ default: $params.qc ]
 
     ${c_yellow}Computing options:${c_reset}
     --cores                  Max cores per process for local use [default: $params.cores]

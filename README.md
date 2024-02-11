@@ -97,6 +97,8 @@ split                    If the input fasta file contains sequences of more than
                          ensure the use of the right references and tables.
                          The options are FluPipe, GISAID and OpenFlu.
                          [ default: '' ]
+qc                       If set to true, a QC report will be generated from the Nextclade output.
+                         [ default: true ]
 ```
 
 

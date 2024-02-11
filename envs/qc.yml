@@ -1,9 +1,13 @@
-name: annotation
+name: qc
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
   - python=3.9.7
-  - biopython=1.79
   - pandas=1.5.3
+  - r-base=4.3.2
+  - r-rmarkdown=2.25
+  - r-dplyr=1.1.4
+  - r-plotly=4.10.3
+  - r-dt=0.28
