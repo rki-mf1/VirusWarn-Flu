@@ -366,7 +366,9 @@ if (nrow(red_table) == 0){
     unnest(Mutations) %>%
     mutate(week = week(ymd(Collection_Date)))
     
-  df_week <- df_mutations_filtered %>% 
+  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
+    select(Collection_Date) %>%
+    mutate(week = week(ymd(Collection_Date))) %>%
     group_by(week) %>%
     summarize(count = n())
   
@@ -379,7 +381,7 @@ if (nrow(red_table) == 0){
   df_mutations_grouped <- df_mutations_filtered %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
-    mutate(perc = round(freq/length(df_names)*100, digits = 2)) %>% 
+    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
   pos <- c()
@@ -685,7 +687,9 @@ if (nrow(orange_table) == 0){
     unnest(Mutations) %>%
     mutate(week = week(ymd(Collection_Date)))
     
-  df_week <- df_mutations_filtered %>% 
+  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
+    select(Collection_Date) %>%
+    mutate(week = week(ymd(Collection_Date))) %>%
     group_by(week) %>%
     summarize(count = n())
   
@@ -698,7 +702,7 @@ if (nrow(orange_table) == 0){
   df_mutations_grouped <- df_mutations_filtered %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
-    mutate(perc = round(freq/length(df_names)*100, digits = 2)) %>% 
+    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
   pos <- c()
@@ -1005,7 +1009,9 @@ if (nrow(yellow_table) == 0){
     unnest(Mutations) %>%
     mutate(week = week(ymd(Collection_Date)))
     
-  df_week <- df_mutations_filtered %>% 
+  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
+    select(Collection_Date) %>%
+    mutate(week = week(ymd(Collection_Date))) %>%
     group_by(week) %>%
     summarize(count = n())
   
@@ -1018,7 +1024,7 @@ if (nrow(yellow_table) == 0){
   df_mutations_grouped <- df_mutations_filtered %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
-    mutate(perc = round(freq/length(df_names)*100, digits = 2)) %>% 
+    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
   pos <- c()
@@ -1324,7 +1330,9 @@ if (nrow(grey_table) == 0){
     unnest(Mutations) %>%
     mutate(week = week(ymd(Collection_Date)))
     
-  df_week <- df_mutations_filtered %>% 
+  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
+    select(Collection_Date) %>%
+    mutate(week = week(ymd(Collection_Date))) %>%
     group_by(week) %>%
     summarize(count = n())
   
@@ -1337,7 +1345,7 @@ if (nrow(grey_table) == 0){
   df_mutations_grouped <- df_mutations_filtered %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
-    mutate(perc = round(freq/length(df_names)*100, digits = 2)) %>% 
+    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
     ungroup() 
   
   pos <- c()
