@@ -53,7 +53,11 @@ workflow FLUWARNSYSTEM {
 
         if (params.subtype == 'h1n1') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
-            moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+            if (params.ref == 'old') {
+                moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA_California.tsv", checkIfExists: true) )
+            } else {
+                moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+            }
             roi_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
         } else if (params.subtype == 'h3n2') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
