@@ -40,13 +40,12 @@ library(DT)
 
 ```{r data, include=FALSE}
 qc <- read.delim(params$qc_table)
+qc <- qc %>% select(-X)
 
-seq <- qc[nchar(qc$errors) == 0,] %>%
-  select(-X)
+seq <- qc[is.na(qc$errors),]
 row.names(seq) <- NULL
 
-skipped <- qc[nchar(qc$errors) > 0,] %>%
-  select(-X)
+skipped <- qc[!is.na(qc$errors),]
 row.names(skipped) <- NULL
 ```
 
@@ -128,62 +127,74 @@ if (nrow(seq) == 0){
 ### QC Status
 
 ```{r qc status, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
-bar.data <- seq %>%
-  group_by(qc.overallStatus) %>%
-  summarize(count = n())
-
-status_tick <- unique(seq$qc.overallStatus)
-
-plot_ly(
-    bar.data, x=~qc.overallStatus, y=~count, 
-    type = "bar",
-    marker = list(color = "lightblue"),
-    hoverinfo='text',
-    hovertext=~paste0("<b>Status: </b>", .data$qc.overallStatus, "<br><b># of Sequences: </b>", .data$count)
-  ) %>%
-    layout(
-      xaxis=list(nticks=length(status_tick), title='<b>QC Status</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number of Sequences</b>", showgrid=FALSE)
-    )
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {  
+  bar.data <- seq %>%
+    group_by(qc.overallStatus) %>%
+    summarize(count = n())
+  
+  status_tick <- unique(seq$qc.overallStatus)
+  
+  plot_ly(
+      bar.data, x=~qc.overallStatus, y=~count, 
+      type = "bar",
+      marker = list(color = "lightblue"),
+      hoverinfo='text',
+      hovertext=~paste0("<b>Status: </b>", .data$qc.overallStatus, "<br><b># of Sequences: </b>", .data$count)
+    ) %>%
+      layout(
+        xaxis=list(nticks=length(status_tick), title='<b>QC Status</b>', showgrid=FALSE),
+        yaxis=list(title="<b>Number of Sequences</b>", showgrid=FALSE)
+      )
+}
 ```
 
 ### Alignment score
 
 ```{r alignment, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
-align.data <- seq %>%
-  group_by(alignmentScore) %>%
-  summarize(count = n())
-
-plot_ly(
-  align.data, x = ~alignmentScore, y = ~count,
-  type = "bar",
-  marker = list(color = "blue"),
-  hoverinfo='text',
-  hovertext=~paste0("<b>Alignment Score: </b>", .data$alignmentScore, "<br><b># of Sequences: </b>", .data$count)
-) %>%
-  layout(
-    xaxis = list(title = "Alignment Score"),
-    yaxis = list(title = "Number of Sequences")
-  )
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {
+  align.data <- seq %>%
+    group_by(alignmentScore) %>%
+    summarize(count = n())
+  
+  plot_ly(
+    align.data, x = ~alignmentScore, y = ~count,
+    type = "bar",
+    marker = list(color = "blue"),
+    hoverinfo='text',
+    hovertext=~paste0("<b>Alignment Score: </b>", .data$alignmentScore, "<br><b># of Sequences: </b>", .data$count)
+  ) %>%
+    layout(
+      xaxis = list(title = "Alignment Score"),
+      yaxis = list(title = "Number of Sequences")
+    )
+}
 ```
 
 ### Coverage
 
 ```{r coverage, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
-cov.data <- seq_tab %>%
-  group_by(Coverage) %>%
-  summarize(count = n())
-
-plot_ly(
-  cov.data, x = ~Coverage, y = ~count,
-  type = "bar",
-  marker = list(color = "blue"),
-  hoverinfo='text',
-  hovertext=~paste0("<b>Coverage: </b>", .data$Coverage, "<br><b># of Sequences: </b>", .data$count)
-) %>%
-  layout(
-    yaxis = list(title = "Number of Sequences")
-  )
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {  
+  cov.data <- seq_tab %>%
+    group_by(Coverage) %>%
+    summarize(count = n())
+  
+  plot_ly(
+    cov.data, x = ~Coverage, y = ~count,
+    type = "bar",
+    marker = list(color = "blue"),
+    hoverinfo='text',
+    hovertext=~paste0("<b>Coverage: </b>", .data$Coverage, "<br><b># of Sequences: </b>", .data$count)
+  ) %>%
+    layout(
+      yaxis = list(title = "Number of Sequences")
+    )
+}
 ```
 
 
