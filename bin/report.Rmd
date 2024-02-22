@@ -7,6 +7,7 @@ params:
   fasta: ""
   metadata: ""
   variant_table: "variant_table.tsv"
+  annot_table: "variants_with_phenotypes.tsv"
   alert_samples: "fluwarnsystem-alerts-samples-all.csv"
   subtype: ""
   ref: ""
@@ -86,17 +87,17 @@ library(DT)
 fasta <- read.fasta(params$fasta)
 
 variant_table <- read.delim(params$variant_table)
+annot_table <- read.delim(params$annot_table)
 samples <- read.delim(params$alert_samples, sep = ',')
 
-moc <- read.delim(params$moc)
-roi <- read.delim(params$roi, sep = ',')
+moc_table <- read.delim(params$moc)
+roi_table <- read.delim(params$roi, sep = ',')
 
 if(params$metadata != ''){
-  metadata_end <- substr(params$metadata, nchar(params$metadata) - 2, nchar(params$metadata))
-  if (metadata_end == "lsx"){
-    metadata <- read_xlsx(params$metadata)
-  } else if (metadata_end == "xls"){
-    metadata <- read_xls(params$metadata)
+  metadata <- read_excel(params$metadata)
+  # GISAID sometimes contains dates like 2012-01, R then reads the column as character not as date
+  if (class(metadata$Collection_Date) != "Date") {
+    metadata$Collection_Date <- as.Date(as.numeric(metadata$Collection_Date), origin = "1899-12-30")
   }
 }
 ```
@@ -104,6 +105,22 @@ if(params$metadata != ''){
 ```{r remove, include=FALSE}
 samples <- samples %>%
   filter(!ID %in% c('ROI_ERROR_CATCH', 'NotAnnotated_ERROR_CATCH'))
+```
+
+```{r data groups, include=FALSE}
+red_table <- filter(samples, alert_level == 'red') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+orange_table <- filter(samples, alert_level == 'orange') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+yellow_table <- filter(samples, alert_level == 'yellow') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+grey_table <- filter(samples, alert_level == 'grey') %>%
+  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+
+black_table <- filter(samples, alert_level == 'black') 
 ```
 
 
@@ -144,6 +161,83 @@ if (params$metadata != ""){
 }
 ```
 
+### Sequences per Group
+
+```{r bar plot,  out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+alert_colors <- c(black = "black", grey = "lightgrey", yellow = "#FFEA00", orange = "orange", red = "red")
+
+if (params$metadata == ""){
+  df_bar <- samples %>%
+    group_by(alert_level) %>%
+    summarize(count = n())
+  
+  if (nrow(df_bar) != 5){
+    all_alert_levels <- c('black', 'grey', 'yellow', 'orange', 'red')
+    missing_alert_levels <- setdiff(all_alert_levels, df_bar$alert_level)
+    for (level in missing_alert_levels){
+      new_row <- data.frame(alert_level = level, count = 0)
+      df_bar <- rbind(df_bar, new_row)
+    }
+  }
+  
+  order_levels <- c('black', 'grey', 'yellow', 'orange', 'red')
+  df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
+  count_sum <- sum(df_bar$count)
+  
+  plot_ly(
+    df_bar, x = ~0, y = ~count,
+    type = 'bar', 
+    color = ~alert_level,
+    colors = alert_colors,
+    hoverinfo = 'text',
+    hovertext = ~paste0("<b>Group: </b>", alert_level, "<br><b># of sequences: </b>", count, "<br><b>Percentage: </b>", round(count/count_sum*100, digits = 2), "%")
+  ) %>% 
+    layout(
+      xaxis = list(title = 'Alert Level'),
+      yaxis = list(title = 'Count'), 
+      barmode = 'stack'
+    )
+} else {
+  names_all <- vector(mode = "character", length = length(samples$ID))
+  df_names_all <- cbind(samples, names_all)
+  names(df_names_all)[26] <- "Isolate_Name"
+  for (j in 1:length(df_names_all$ID)){
+    df_names_all$Isolate_Name[j] <- trimws(str_split_i(df_names_all$ID[j], "\\|", 3))
+  }
+  
+  df_week_all <- merge(df_names_all, metadata, by="Isolate_Name", all.x = TRUE) %>% 
+    select(Isolate_Name, alert_level, ID, Collection_Date) %>%
+    mutate(week = week(ymd(Collection_Date)))
+    
+  df_week_all$week <- replace(df_week_all$week, is.na(df_week_all$week), "unassigned")
+  
+  df_bar <- df_week_all %>%
+    group_by(alert_level, week) %>%
+    summarize(count = n())
+  
+  df_bar_temp <- subset(df_bar, week != "unassigned")
+  full_seq <- seq(min(df_bar_temp$week), max(df_bar_temp$week))
+  missing <- setdiff(full_seq, df_bar$week)
+  
+  for (i in 1:length(missing)){
+    new_row <- list(week = toString(missing[[i]]), alert_level = 'black', count = 0)
+    df_bar <- rbind(df_bar, new_row)
+  }
+  
+  order_levels <- c('black', 'grey', 'yellow', 'orange', 'red')
+  df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
+  
+  plot_ly(
+    df_bar, x = ~week, y = ~count, 
+    type = 'bar', 
+    color = ~alert_level,
+    colors = alert_colors,
+    hoverinfo='text',
+    hovertext=~paste0("<b>Week: </b>", week, "<br><b>Group: </b>", alert_level, "<br><b># of sequences: </b>", count)
+  ) %>% 
+    layout(yaxis = list(title = 'Count'), barmode = 'stack')
+}
+```
 
 <a id="item-one"></a>
 
@@ -151,9 +245,6 @@ if (params$metadata != ""){
 #### *Sequences with at least 1 MOC and 5 or more MOC & ROI*
 
 ```{r red data, echo=FALSE, message=FALSE, warning=FALSE}
-red_table <- filter(samples, alert_level == 'red') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
-
 for (i in red_table["ID"]) {
   new <- str_remove_all(i, "%space%")
   red_table["ID"][red_table["ID"] == i] <- new
@@ -275,7 +366,7 @@ if (nrow(red_table) == 0){
           text=paste0(
           "<b>AA Position: </b>", x, 
           "<br><b># of samples: </b>", y, 
-          "<br><b>samples: </b>", list_len, list
+          "<br><b># of substitutions: </b>", list_len, list
           )
         ),
         color="red",
@@ -311,16 +402,36 @@ if (nrow(red_table) == 0){
   
   subtype <- vector(mode = "character", length = length(red_table_copy$ID))
   seg <- vector(mode = "character", length = length(red_table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(red_table_copy$ID))
+  roi <- vector(mode = "character", length = length(red_table_copy$ID))
+  pm <- vector(mode = "character", length = length(red_table_copy$ID))
     
-  red_table_copy <- cbind(subtype, seg, red_table_copy)
+  red_table_copy <- cbind(subtype, seg, red_table_copy, moc, roi, pm)
     
   names(red_table_copy)[1] <- "Subtype"
   names(red_table_copy)[2] <- "Segment"
+  
+  names(red_table_copy)[4] <- "Substitutions"
+  
+  names(red_table_copy)[7] <- "MOC"
+  names(red_table_copy)[8] <- "ROI"
+  names(red_table_copy)[9] <- "PM"
   
   for (j in 1:length(red_table_copy$ID)){
     red_table_copy$Subtype[j] <- str_split_i(red_table_copy$ID[j], "\\|", -1)
     red_table_copy$Segment[j] <- str_split_i(red_table_copy$ID[j], "\\|", 2)
   }
+  
+  for (k in 1:length(red_table_copy$ID)){
+    temp <- subset(annot_table, ID == red_table_copy$ID[k])
+    red_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    red_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    red_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
+  red_table_copy <- red_table_copy[, col_order]
   
   datatable(
     red_table_copy, 
@@ -355,9 +466,9 @@ if (!(nrow(red_table) == 0)){
 
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
-#} else if (params$metadata == ""){
-#  cat("The heatmap shows the frequency of mutations over the weeks.")
-#  cat("No metadata file with collection dates was given, so no heatmap was generated.")
+} else if (params$metadata == ""){
+  cat("The heatmap shows the frequency of mutations over the weeks.")
+  cat("No metadata file with collection dates was given, so no heatmap was generated.")
 } else if (any(df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
   cat("No metadata given for the sequences of Group RED.")
 } else {
@@ -372,13 +483,21 @@ if (nrow(red_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  df_mutations_filtered <- merge(df_mutations_filtered, df_week, by="week") %>%
+  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
     select(Mutations, week, count)
+  
+  df_mutations_merged <- df_mutations_merged_all %>%
+    drop_na(week)
+  
+  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
+    df_na <- df_week %>% drop_na(week)
+    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
+  }
 
-  names(df_mutations_filtered)[1] <- "aa_profile"
-  names(df_mutations_filtered)[3] <- "week_count_total"
+  names(df_mutations_merged)[1] <- "aa_profile"
+  names(df_mutations_merged)[3] <- "week_count_total"
 
-  df_mutations_grouped <- df_mutations_filtered %>% 
+  df_mutations_grouped <- df_mutations_merged %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
@@ -397,10 +516,8 @@ if (nrow(red_table) == 0){
   
   plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
-  
-  min_val <- min(plot.data$week)
-  max_val <- max(plot.data$week)
-  full_seq <- min_val:max_val
+
+  full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
   for (i in 1:length(missing)){
@@ -454,7 +571,7 @@ if (nrow(red_table) == 0){
   ) %>%
     layout(
       xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number <br> of sequences</b>", showgrid=FALSE)
+      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
     )
   
   subplot(
@@ -472,9 +589,6 @@ if (nrow(red_table) == 0){
 #### *Sequences with at least 1 MOC and 3 or more MOC & ROI*
 
 ```{r orange data, echo=FALSE, message=FALSE, warning=FALSE}
-orange_table <- filter(samples, alert_level == 'orange') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
-
 for (i in orange_table["ID"]) {
   new <- str_remove_all(i, "%space%")
   orange_table["ID"][orange_table["ID"] == i] <- new
@@ -596,7 +710,7 @@ if (nrow(orange_table) == 0){
           text=paste0(
           "<b>AA Position: </b>", x, 
           "<br><b># of samples: </b>", y, 
-          "<br><b>samples: </b>", list_len, list
+          "<br><b># of substitutions: </b>", list_len, list
           )
         ),
         color="orange",
@@ -632,16 +746,36 @@ if (nrow(orange_table) == 0){
   
   subtype <- vector(mode = "character", length = length(orange_table_copy$ID))
   seg <- vector(mode = "character", length = length(orange_table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(orange_table_copy$ID))
+  roi <- vector(mode = "character", length = length(orange_table_copy$ID))
+  pm <- vector(mode = "character", length = length(orange_table_copy$ID))
     
-  orange_table_copy <- cbind(subtype, seg, orange_table_copy)
+  orange_table_copy <- cbind(subtype, seg, orange_table_copy, moc, roi, pm)
     
   names(orange_table_copy)[1] <- "Subtype"
   names(orange_table_copy)[2] <- "Segment"
+  
+  names(orange_table_copy)[4] <- "Substitutions"
+  
+  names(orange_table_copy)[7] <- "MOC"
+  names(orange_table_copy)[8] <- "ROI"
+  names(orange_table_copy)[9] <- "PM"
   
   for (j in 1:length(orange_table_copy$ID)){
     orange_table_copy$Subtype[j] <- str_split_i(orange_table_copy$ID[j], "\\|", -1)
     orange_table_copy$Segment[j] <- str_split_i(orange_table_copy$ID[j], "\\|", 2)
   }
+  
+  for (k in 1:length(orange_table_copy$ID)){
+    temp <- subset(annot_table, ID == orange_table_copy$ID[k])
+    orange_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    orange_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    orange_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
+  orange_table_copy <- orange_table_copy[, col_order]
   
   datatable(
     orange_table_copy, 
@@ -693,13 +827,21 @@ if (nrow(orange_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  df_mutations_filtered <- merge(df_mutations_filtered, df_week, by="week") %>%
+  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
     select(Mutations, week, count)
+  
+  df_mutations_merged <- df_mutations_merged_all %>%
+    drop_na(week)
+  
+  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
+    df_na <- df_week %>% drop_na(week)
+    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
+  }
 
-  names(df_mutations_filtered)[1] <- "aa_profile"
-  names(df_mutations_filtered)[3] <- "week_count_total"
+  names(df_mutations_merged)[1] <- "aa_profile"
+  names(df_mutations_merged)[3] <- "week_count_total"
 
-  df_mutations_grouped <- df_mutations_filtered %>% 
+  df_mutations_grouped <- df_mutations_merged %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
@@ -719,9 +861,7 @@ if (nrow(orange_table) == 0){
   plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
-  min_val <- min(plot.data$week)
-  max_val <- max(plot.data$week)
-  full_seq <- min_val:max_val
+  full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
   for (i in 1:length(missing)){
@@ -775,7 +915,7 @@ if (nrow(orange_table) == 0){
   ) %>%
     layout(
       xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number <br> of sequences</b>", showgrid=FALSE)
+      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
     )
   
   subplot(
@@ -794,9 +934,6 @@ if (nrow(orange_table) == 0){
 #### *Sequences with 0 MOC and 8 or more ROI and 24 or less PM*
 
 ```{r yellow data, echo=FALSE, message=FALSE, warning=FALSE}
-yellow_table <- filter(samples, alert_level == 'yellow') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
-
 for (i in yellow_table["ID"]) {
   new <- str_remove_all(i, "%space%")
   yellow_table["ID"][yellow_table["ID"] == i] <- new
@@ -918,7 +1055,7 @@ if (nrow(yellow_table) == 0){
           text=paste0(
           "<b>AA Position: </b>", x, 
           "<br><b># of samples: </b>", y, 
-          "<br><b>samples: </b>", list_len, list
+          "<br><b># of substitutions: </b>", list_len, list
           )
         ),
         color="#FFEA00",
@@ -954,16 +1091,36 @@ if (nrow(yellow_table) == 0){
   
   subtype <- vector(mode = "character", length = length(yellow_table_copy$ID))
   seg <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  roi <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  pm <- vector(mode = "character", length = length(yellow_table_copy$ID))
     
-  yellow_table_copy <- cbind(subtype, seg, yellow_table_copy)
+  yellow_table_copy <- cbind(subtype, seg, yellow_table_copy, moc, roi, pm)
     
   names(yellow_table_copy)[1] <- "Subtype"
   names(yellow_table_copy)[2] <- "Segment"
+  
+  names(yellow_table_copy)[4] <- "Substitutions"
+  
+  names(yellow_table_copy)[7] <- "MOC"
+  names(yellow_table_copy)[8] <- "ROI"
+  names(yellow_table_copy)[9] <- "PM"
   
   for (j in 1:length(yellow_table_copy$ID)){
     yellow_table_copy$Subtype[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", -1)
     yellow_table_copy$Segment[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", 2)
   }
+  
+  for (k in 1:length(yellow_table_copy$ID)){
+    temp <- subset(annot_table, ID == yellow_table_copy$ID[k])
+    yellow_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    yellow_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    yellow_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
+  yellow_table_copy <- yellow_table_copy[, col_order]
   
   datatable(
     yellow_table_copy, 
@@ -1015,13 +1172,21 @@ if (nrow(yellow_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  df_mutations_filtered <- merge(df_mutations_filtered, df_week, by="week") %>%
+  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
     select(Mutations, week, count)
+  
+  df_mutations_merged <- df_mutations_merged_all %>%
+    drop_na(week)
+  
+  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
+    df_na <- df_week %>% drop_na(week)
+    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
+  }
 
-  names(df_mutations_filtered)[1] <- "aa_profile"
-  names(df_mutations_filtered)[3] <- "week_count_total"
+  names(df_mutations_merged)[1] <- "aa_profile"
+  names(df_mutations_merged)[3] <- "week_count_total"
 
-  df_mutations_grouped <- df_mutations_filtered %>% 
+  df_mutations_grouped <- df_mutations_merged %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
@@ -1041,9 +1206,7 @@ if (nrow(yellow_table) == 0){
   plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
-  min_val <- min(plot.data$week)
-  max_val <- max(plot.data$week)
-  full_seq <- min_val:max_val
+  full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
   for (i in 1:length(missing)){
@@ -1097,7 +1260,7 @@ if (nrow(yellow_table) == 0){
   ) %>%
     layout(
       xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number <br> of sequences</b>", showgrid=FALSE)
+      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
     )
   
   subplot(
@@ -1115,9 +1278,6 @@ if (nrow(yellow_table) == 0){
 #### *Sequences with 25 or more PM and 8 or more ROI*
 
 ```{r grey data, echo=FALSE, message=FALSE, warning=FALSE}
-grey_table <- filter(samples, alert_level == 'grey') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
-
 for (i in grey_table["ID"]) {
   new <- str_remove_all(i, "%space%")
   grey_table["ID"][grey_table["ID"] == i] <- new
@@ -1239,7 +1399,7 @@ if (nrow(grey_table) == 0){
           text=paste0(
           "<b>AA Position: </b>", x, 
           "<br><b># of samples: </b>", y, 
-          "<br><b>samples: </b>", list_len, list
+          "<br><b># of substitutions: </b>", list_len, list
           )
         ),
         color="lightgrey",
@@ -1275,16 +1435,36 @@ if (nrow(grey_table) == 0){
   
   subtype <- vector(mode = "character", length = length(grey_table_copy$ID))
   seg <- vector(mode = "character", length = length(grey_table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(grey_table_copy$ID))
+  roi <- vector(mode = "character", length = length(grey_table_copy$ID))
+  pm <- vector(mode = "character", length = length(grey_table_copy$ID))
     
-  grey_table_copy <- cbind(subtype, seg, grey_table_copy)
+  grey_table_copy <- cbind(subtype, seg, grey_table_copy, moc, roi, pm)
     
   names(grey_table_copy)[1] <- "Subtype"
   names(grey_table_copy)[2] <- "Segment"
+  
+  names(grey_table_copy)[4] <- "Substitutions"
+  
+  names(grey_table_copy)[7] <- "MOC"
+  names(grey_table_copy)[8] <- "ROI"
+  names(grey_table_copy)[9] <- "PM"
   
   for (j in 1:length(grey_table_copy$ID)){
     grey_table_copy$Subtype[j] <- str_split_i(grey_table_copy$ID[j], "\\|", -1)
     grey_table_copy$Segment[j] <- str_split_i(grey_table_copy$ID[j], "\\|", 2)
   }
+  
+  for (k in 1:length(grey_table_copy$ID)){
+    temp <- subset(annot_table, ID == grey_table_copy$ID[k])
+    grey_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    grey_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    grey_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
+  grey_table_copy <- grey_table_copy[, col_order]
   
   datatable(
     grey_table_copy, 
@@ -1336,13 +1516,21 @@ if (nrow(grey_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  df_mutations_filtered <- merge(df_mutations_filtered, df_week, by="week") %>%
+  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
     select(Mutations, week, count)
+  
+  df_mutations_merged <- df_mutations_merged_all %>%
+    drop_na(week)
+  
+  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
+    df_na <- df_week %>% drop_na(week)
+    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
+  }
 
-  names(df_mutations_filtered)[1] <- "aa_profile"
-  names(df_mutations_filtered)[3] <- "week_count_total"
+  names(df_mutations_merged)[1] <- "aa_profile"
+  names(df_mutations_merged)[3] <- "week_count_total"
 
-  df_mutations_grouped <- df_mutations_filtered %>% 
+  df_mutations_grouped <- df_mutations_merged %>% 
     group_by(week, week_count_total, aa_profile) %>% 
     summarize(freq = n()) %>%
     mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
@@ -1362,9 +1550,7 @@ if (nrow(grey_table) == 0){
   plot.data <- df_mutations_sorted %>% 
     select(week, aa_profile, freq, perc)
   
-  min_val <- min(plot.data$week)
-  max_val <- max(plot.data$week)
-  full_seq <- min_val:max_val
+  full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
   for (i in 1:length(missing)){
@@ -1418,7 +1604,7 @@ if (nrow(grey_table) == 0){
   ) %>%
     layout(
       xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number <br> of sequences</b>", showgrid=FALSE)
+      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
     )
   
   subplot(
@@ -1435,8 +1621,6 @@ if (nrow(grey_table) == 0){
 ## Group <span style="color: black;">BLACK</span>
 
 ```{r black data, echo=FALSE, message=FALSE, warning=FALSE}
-black_table <- filter(samples, alert_level == 'black') 
-
 cat(paste0('> ', 'Sequences in Group BLACK: ', nrow(black_table)))
 ```
 
@@ -1495,10 +1679,10 @@ For HA segment:
 The following table shows a list of the Mutations of Concern that were used to generate the Report.
 
 ```{r moc, echo=FALSE, message=FALSE, warning=FALSE}
-moc <- moc[, -4]
+moc_table <- moc_table[, -4]
 
 datatable(
-  moc, 
+  moc_table, 
   class = 'cell-border stripe', 
   options = list(
     dom = 'lftp', 
@@ -1521,10 +1705,10 @@ datatable(
 The following table shows a list of Regions of Interest that were used to generate the Report.
 
 ```{r roi, echo=FALSE, message=FALSE, warning=FALSE}
-names(roi)[1] <- "gene"
+names(roi_table)[1] <- "gene"
 
 datatable(
-  roi, 
+  roi_table, 
   class = 'cell-border stripe', 
   options = list(
     dom = 'lftp', 

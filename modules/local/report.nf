@@ -35,6 +35,7 @@ process REPORT {
             fasta = \'${input_fasta}\', \\
             metadata = \'${metadata}\', \\
             variant_table = \'${variant_table}\', \\
+            annot_table = \'${variants_phenotypes}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
             subtype = \'${subtype}\', \\
             ref = \'${params.ref}\', \\
