@@ -1,4 +1,12 @@
 gene	amino acid	type	ID	comment	source
-NA	H275Y	MutationOfConcern	NA	Oseltamivir resistance	doi:10.1371/journal.pone.0016087, doi: 10.1128/JVI.00936-10
+NA	E119D	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	E119G	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	Q136R	MutationOfConcern	NA	Zanamivir and Peramivir resistant	doi:10.1016/j.antiviral.2020.104970
+NA	G147R	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	I222V	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	I223K	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	I223R	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	S247N	MutationOfConcern	NA	Synergetic effects on NA inhibitors with H275Y	doi:10.1016/j.antiviral.2022.105280
+NA	H275Y	MutationOfConcern	NA	Oseltamivir and Peramivir resistant	doi:10.1371/journal.pone.0016087, doi:10.1128/JVI.00936-10, doi:10.1016/j.antiviral.2020.104970
 NA	S286G	MutationOfConcern	NA	Increase severe disease, with co-variation PB1-K480R	doi:10.1371/journal.pone.0016087
-NA	N295S	MutationOfConcern	NA	Alter oseltamivir susceptibility	doi: 10.1128/JVI.00936-10
+NA	N295S	MutationOfConcern	NA	Alter oseltamivir susceptibility	doi:10.1128/JVI.00936-10

@@ -1,4 +1,39 @@
 name,nt_start,nt_end,aa_start,aa_end,type,func,source
+HA,364,366,122,122,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,370,372,124,124,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,391,393,131,131,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,397,399,133,133,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,403,405,135,135,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,409,414,137,138,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,418,420,140,140,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,424,438,142,146,RegionOfInterest,Antigenic site A,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,463,480,155,160,RegionOfInterest,Antigenic site B,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,487,492,163,164,RegionOfInterest,Antigenic site B,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,559,570,187,190,RegionOfInterest,Antigenic site B,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,574,582,192,194,RegionOfInterest,Antigenic site B,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,157,162,53,54,RegionOfInterest,Antigenic site C,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,823,828,275,276,RegionOfInterest,Antigenic site C,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,832,834,278,278,RegionOfInterest,Antigenic site C,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,514,522,172,174,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,601,603,201,201,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,619,621,207,207,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,637,639,213,213,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,649,651,217,217,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,676,690,226,230,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,724,726,242,242,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,730,732,244,244,RegionOfInterest,Antigenic site D,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,184,189,62,63,RegionOfInterest,Antigenic site E,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,232,234,78,78,RegionOfInterest,Antigenic site E,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,244,249,82,83,RegionOfInterest,Antigenic site E,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,778,786,260,262,RegionOfInterest,Antigenic site E,doi:10.1093/oxfordjournals.molbev.a026057 doi:10.1038/s41598-020-71275-5
+HA,292,294,98,98,RegionOfInterest,Receptor Binding site 130-loop (Flank),doi:10.1016/j.virol.2014.12.024
+HA,391,414,131,138,RegionOfInterest,Receptor Binding site 130-loop,doi:10.1016/j.virol.2014.12.024
+HA,418,420,140,140,RegionOfInterest,Receptor Binding site 130-loop,doi:10.1016/j.virol.2014.12.024
+HA,430,438,144,146,RegionOfInterest,Receptor Binding site 130-loop (Flank),doi:10.1016/j.virol.2014.12.024
+HA,457,477,153,159,RegionOfInterest,Receptor Binding site 190-helix (Flank),doi:10.1016/j.virol.2014.12.024
+HA,547,549,183,183,RegionOfInterest,Receptor Binding site 190-helix,doi:10.1016/j.virol.2014.12.024
+HA,553,588,185,196,RegionOfInterest,Receptor Binding site 190-helix,doi:10.1016/j.virol.2014.12.024
+HA,655,684,219,228,RegionOfInterest,Receptor Binding site 220-loop,doi:10.1016/j.virol.2014.12.024
 HA,61,63,21,21,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
 HA,472,474,158,158,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
 HA,478,480,160,160,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302

@@ -1,0 +1,8 @@
+gene	amino acid	type	ID	comment	source
+HA	K90E	MutationOfConcern	NA	Escape mutant	doi:10.1128/jvi.01185-20
+HA	G164E	MutationOfConcern	NA	Escape mutant	doi:10.1128/jvi.01185-20
+HA	K177D179del	MutationOfConcern	NA	Loss of HA recognition in antibodies	doi:10.1038/s41467-018-08165-y
+HA	D212N	MutationOfConcern	NA	Escape mutant	doi:10.1128/jvi.01185-20
+HA	D212S	MutationOfConcern	NA	Escape mutant	doi:10.1128/jvi.01185-20
+HA	T214A	MutationOfConcern	NA	Escape mutant	doi:10.1128/jvi.01185-20
+HA	T214P	MutationOfConcern	NA	Escape mutant	doi:10.1038/s41467-018-08165-y

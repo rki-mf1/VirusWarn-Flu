@@ -13,7 +13,7 @@ HA	N156K	MutationOfConcern	NA	Escape mutant	doi: 10.1371/journal.ppat.1003354
 HA	T157A	MutationOfConcern	NA	Loss of N-Glycosylation, increased binding and transmission	doi:10.1371/journal.pone.0112302
 HA	N183K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	D184G	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
-HA	A186T	MutationOfConcern	NA	UNCLEAR - Increase severe disease	doi: 10.3390/v11090791
+HA	A186T	MutationOfConcern	NA	Increase severe disease	doi: 10.3390/v11090791
 HA	E187G	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	T189I	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	K190R	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
@@ -22,16 +22,16 @@ HA	Q193R	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10
 HA	N194K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	V211I	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	I216K	MutationOfConcern	NA	Increase transmission	doi: 10.1007/s00430-013-0291-4
-HA	I216V	MutationOfConcern	NA	UNCLEAR - Increase transmission	doi: 10.1007/s00430-013-0291-4
+HA	I216V	MutationOfConcern	NA	Increase transmission	doi: 10.1007/s00430-013-0291-4
 HA	D222G	MutationOfConcern	NA	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1093/infdis/jis539, doi: 10.3390/v11090791
-HA	D222E	MutationOfConcern	NA	UNCLEAR - Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
+HA	D222E	MutationOfConcern	NA	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087
 HA	D222N	MutationOfConcern	NA	Increase severe disease	doi:10.1007/s00705-014-2179-z, doi:10.1371/journal.pone.0016087, doi: 10.3390/v11090791
 HA	Q223L	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	S224N	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	G225S	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	P236S	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
 HA	E252K	MutationOfConcern	NA	Increased virus binding to alpha2-6 glycans	doi:10.1371/journal.pone.0112302
-HA	Q293H	MutationOfConcern	NA	UNCLEAR - Increase severe disease	doi: 10.1093/infdis/jis539
+HA	Q293H	MutationOfConcern	NA	Increase severe disease	doi: 10.1093/infdis/jis539
 HA	Q310H	MutationOfConcern	NA	Increase severe disease	doi: 10.4161/cc.9.5.10913
 HA	C326P327insK	MutationOfConcern	NA	Poly-basic cleavage, increase pathogenicity	doi:10.1371/journal.pone.0112302
 HA	C326P327insR	MutationOfConcern	NA	Poly-basic cleavage, increase pathogenicity	doi:10.1371/journal.pone.0112302
