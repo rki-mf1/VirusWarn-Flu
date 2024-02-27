@@ -96,9 +96,9 @@ roi_table <- read.delim(params$roi, sep = ',')
 if(params$metadata != ''){
   metadata <- read_excel(params$metadata)
   # GISAID sometimes contains dates like 2012-01, R then reads the column as character not as date
-  if (class(metadata$Collection_Date) != "Date") {
-    metadata$Collection_Date <- as.Date(as.numeric(metadata$Collection_Date), origin = "1899-12-30")
-  }
+  #if (class(metadata$Collection_Date) == "character") {
+  #  metadata$Collection_Date <- as.Date(as.numeric(metadata$Collection_Date), origin = "1899-12-30")
+  #}
 }
 ```
 
@@ -215,13 +215,19 @@ if (params$metadata == ""){
     group_by(alert_level, week) %>%
     summarize(count = n())
   
-  df_bar_temp <- subset(df_bar, week != "unassigned")
-  full_seq <- seq(min(df_bar_temp$week), max(df_bar_temp$week))
-  missing <- setdiff(full_seq, df_bar$week)
+  df_bar$week <- as.numeric(df_bar$week)
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = toString(missing[[i]]), alert_level = 'black', count = 0)
-    df_bar <- rbind(df_bar, new_row)
+  df_bar_temp <- subset(df_bar, week != "unassigned")
+  if (nrow(df_bar_temp) != 0) {
+    full_seq <- seq(min(df_bar_temp$week), max(df_bar_temp$week))
+    missing <- setdiff(full_seq, df_bar_temp$week)
+    
+    if (length(missing) != 0) {
+      for (i in 1:length(missing)){
+        new_row <- list(week = toString(missing[[i]]), alert_level = 'black', count = 0)
+        df_bar <- rbind(df_bar, new_row)
+      }
+    }
   }
   
   order_levels <- c('black', 'grey', 'yellow', 'orange', 'red')
@@ -442,7 +448,7 @@ if (nrow(red_table) == 0){
       pageLength = 5,
       searchHighlight = TRUE,
       autoWidth= TRUE,
-      columnDefs = list(list(width = 500, targets = 4)),
+      columnDefs = list(list(width = 350, targets = c(3,7))),
       initComplete = JS(
       "function(settings, json) {",
       "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
@@ -520,9 +526,11 @@ if (nrow(red_table) == 0){
   full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-    plot.data <- rbind(plot.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
+      plot.data <- rbind(plot.data, new_row)
+    }
   }
   
   aa_tick <- unique(plot.data$aa_profile)
@@ -554,9 +562,11 @@ if (nrow(red_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], count = 0)
-    bar.data <- rbind(bar.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], count = 0)
+      bar.data <- rbind(bar.data, new_row)
+    }
   }
   
   bar.data <- bar.data %>% 
@@ -786,7 +796,7 @@ if (nrow(orange_table) == 0){
       pageLength = 5,
       searchHighlight = TRUE,
       autoWidth= TRUE,
-      columnDefs = list(list(width = 500, targets = 4)),
+      columnDefs = list(list(width = 350, targets = c(3,7))),
       initComplete = JS(
       "function(settings, json) {",
       "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
@@ -864,9 +874,11 @@ if (nrow(orange_table) == 0){
   full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-    plot.data <- rbind(plot.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
+      plot.data <- rbind(plot.data, new_row)
+    }
   }
   
   aa_tick <- unique(plot.data$aa_profile)
@@ -898,9 +910,11 @@ if (nrow(orange_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], count = 0)
-    bar.data <- rbind(bar.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], count = 0)
+      bar.data <- rbind(bar.data, new_row)
+    }
   }
   
   bar.data <- bar.data %>% 
@@ -1131,7 +1145,7 @@ if (nrow(yellow_table) == 0){
       pageLength = 5,
       searchHighlight = TRUE,
       autoWidth= TRUE,
-      columnDefs = list(list(width = 500, targets = 4)),
+      columnDefs = list(list(width = 350, targets = c(3,7))),
       initComplete = JS(
       "function(settings, json) {",
       "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
@@ -1209,9 +1223,11 @@ if (nrow(yellow_table) == 0){
   full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-    plot.data <- rbind(plot.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
+      plot.data <- rbind(plot.data, new_row)
+    }
   }
   
   aa_tick <- unique(plot.data$aa_profile)
@@ -1243,9 +1259,11 @@ if (nrow(yellow_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], count = 0)
-    bar.data <- rbind(bar.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], count = 0)
+      bar.data <- rbind(bar.data, new_row)
+    }
   }
   
   bar.data <- bar.data %>% 
@@ -1475,7 +1493,7 @@ if (nrow(grey_table) == 0){
       pageLength = 5,
       searchHighlight = TRUE,
       autoWidth= TRUE,
-      columnDefs = list(list(width = 500, targets = 4)),
+      columnDefs = list(list(width = 350, targets = c(3,7))),
       initComplete = JS(
       "function(settings, json) {",
       "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
@@ -1553,9 +1571,11 @@ if (nrow(grey_table) == 0){
   full_seq <- seq(min(plot.data$week), max(plot.data$week))
   missing <- setdiff(full_seq, plot.data$week)
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-    plot.data <- rbind(plot.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
+      plot.data <- rbind(plot.data, new_row)
+    }
   }
   
   aa_tick <- unique(plot.data$aa_profile)
@@ -1587,9 +1607,11 @@ if (nrow(grey_table) == 0){
     group_by(week) %>%
     summarize(count = n())
   
-  for (i in 1:length(missing)){
-    new_row <- list(week = missing[[i]], count = 0)
-    bar.data <- rbind(bar.data, new_row)
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(week = missing[[i]], count = 0)
+      bar.data <- rbind(bar.data, new_row)
+    }
   }
   
   bar.data <- bar.data %>% 
@@ -1621,10 +1643,85 @@ if (nrow(grey_table) == 0){
 ## Group <span style="color: black;">BLACK</span>
 
 ```{r black data, echo=FALSE, message=FALSE, warning=FALSE}
+for (i in black_table["ID"]) {
+  new <- str_remove_all(i, "%space%")
+  black_table["ID"][black_table["ID"] == i] <- new
+}
+
+names(black_table)[2] <- "Mutations"
+names(black_table)[3] <- "Deletions"
+names(black_table)[4] <- "Insertions"
+
+black_table_copy <- black_table
+
+for (i in black_table["Mutations"]){
+  new <- str_split(i, ",")
+  black_table["Mutations"][black_table["Mutations"] == i] <- new
+}
+
 cat(paste0('> ', 'Sequences in Group BLACK: ', nrow(black_table)))
 ```
 
-
+```{r black table, echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(black_table) == 0){
+  cat("No sequences in Group BLACK")
+} else {
+  for (i in black_table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    black_table_copy["Mutations"][black_table_copy["Mutations"] == i] <- new
+  }
+  
+  subtype <- vector(mode = "character", length = length(black_table_copy$ID))
+  seg <- vector(mode = "character", length = length(black_table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(black_table_copy$ID))
+  roi <- vector(mode = "character", length = length(black_table_copy$ID))
+  pm <- vector(mode = "character", length = length(black_table_copy$ID))
+    
+  black_table_copy <- cbind(subtype, seg, black_table_copy, moc, roi, pm)
+    
+  names(black_table_copy)[1] <- "Subtype"
+  names(black_table_copy)[2] <- "Segment"
+  
+  names(black_table_copy)[4] <- "Substitutions"
+  
+  names(black_table_copy)[7] <- "MOC"
+  names(black_table_copy)[8] <- "ROI"
+  names(black_table_copy)[9] <- "PM"
+  
+  for (j in 1:length(black_table_copy$ID)){
+    black_table_copy$Subtype[j] <- str_split_i(black_table_copy$ID[j], "\\|", -1)
+    black_table_copy$Segment[j] <- str_split_i(black_table_copy$ID[j], "\\|", 2)
+  }
+  
+  for (k in 1:length(black_table_copy$ID)){
+    temp <- subset(annot_table, ID == black_table_copy$ID[k])
+    black_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    black_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    black_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
+  black_table_copy <- black_table_copy[, col_order]
+  
+  datatable(
+    black_table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'lftp', 
+      lengthMenu = c(5, 10, 20, 50),
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 350, targets = c(3,7))),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
+  )
+}
+```
 
 
 <a id="item-six"></a>

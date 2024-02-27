@@ -41,6 +41,7 @@ def change_numbering(
 def build_dataframe(
     df_in: pd.DataFrame,
     column: str,
+    subtype: str,
 ) -> pd.DataFrame:
     df_in[column] = df_in[column].astype(str)
     df_in[column] = df_in[column].apply(lambda x: x.split(","))
@@ -96,14 +97,24 @@ def build_dataframe(
     # Row 1-3: VOCAL variant_table.tsv cols
     # Row 4: Added in FluWarnSystem for additional information cols
     # Row 5-6: Nextclade nextclade.csv kept cols
-    subset_cols = [
-        "variant_start_aligned", "variant_end_aligned", "variant_type", "aa_ref", "aa_variant", "variant_size",
-        "aa_pos_ref_start", "aa_pos_ref_end", "aa_pos_query_start", "aa_pos_query_end", "nt_pos_ref_start", "nt_pos_ref_end", 
-        "nt_pos_query_start", "nt_pos_query_end", "nt_pattern", "aa_pattern", "ID", "target_gene", 
-        "nextclade_aa_pattern",
-        "clade", "short-clade", "subclade", "totalAminoacidSubstitutions", "totalAminoacidDeletions",
-        "totalAminoacidInsertions", "glycosylation", "nonACGTNs", "qc.overallStatus", "failedCdses", "warnings", "errors"
-    ]
+    if subtype == 'vic':
+        subset_cols = [
+            "variant_start_aligned", "variant_end_aligned", "variant_type", "aa_ref", "aa_variant", "variant_size",
+            "aa_pos_ref_start", "aa_pos_ref_end", "aa_pos_query_start", "aa_pos_query_end", "nt_pos_ref_start", "nt_pos_ref_end", 
+            "nt_pos_query_start", "nt_pos_query_end", "nt_pattern", "aa_pattern", "ID", "target_gene", 
+            "nextclade_aa_pattern",
+            "clade", "subclade", "totalAminoacidSubstitutions", "totalAminoacidDeletions",
+            "totalAminoacidInsertions", "glycosylation", "nonACGTNs", "qc.overallStatus", "failedCdses", "warnings", "errors"
+        ]
+    else:
+        subset_cols = [
+            "variant_start_aligned", "variant_end_aligned", "variant_type", "aa_ref", "aa_variant", "variant_size",
+            "aa_pos_ref_start", "aa_pos_ref_end", "aa_pos_query_start", "aa_pos_query_end", "nt_pos_ref_start", "nt_pos_ref_end", 
+            "nt_pos_query_start", "nt_pos_query_end", "nt_pattern", "aa_pattern", "ID", "target_gene", 
+            "nextclade_aa_pattern",
+            "clade", "short-clade", "subclade", "totalAminoacidSubstitutions", "totalAminoacidDeletions",
+            "totalAminoacidInsertions", "glycosylation", "nonACGTNs", "qc.overallStatus", "failedCdses", "warnings", "errors"
+        ]
 
     df_temp_subset = df_temp[subset_cols]
     
@@ -111,17 +122,18 @@ def build_dataframe(
 
 def rearrange_table(
     table_in: str,
+    subtype: str,
 ) -> pd.DataFrame:
     df_in = pd.read_csv(table_in, sep=";", index_col=0)
 
     # Column aaSubstitutions from nextclade.csv
-    mut_df = build_dataframe(df_in, "aaSubstitutions")
+    mut_df = build_dataframe(df_in, "aaSubstitutions", subtype)
 
     # Column aaDeletions from nextclade.csv
-    del_df = build_dataframe(df_in, "aaDeletions")
+    del_df = build_dataframe(df_in, "aaDeletions", subtype)
 
     # Column aaInsertions from nextclade.csv
-    in_df = build_dataframe(df_in, "aaInsertions")
+    in_df = build_dataframe(df_in, "aaInsertions", subtype)
 
     df_out = pd.concat([mut_df, del_df, in_df])
     
@@ -148,6 +160,11 @@ def main():
         help="CSV with mutations generated with Nextclade",
     )
     parser.add_argument(
+        "--subtype",
+        required=True,
+        help="Subtype of the input data",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         default="variant_table.tsv",
@@ -161,7 +178,8 @@ def main():
     args = parser.parse_args()
 
     table_in = args.input
-    table_out = rearrange_table(table_in)
+    subtype = args.subtype
+    table_out = rearrange_table(table_in, subtype)
 
     table_out_sigpep = table_out[table_out['aa_pattern'] == 'SigPep']
     table_out_variant = table_out[table_out['aa_pattern'] != 'SigPep']

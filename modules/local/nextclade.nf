@@ -21,8 +21,8 @@ process NEXTCLADE {
         echo "Reference used for Influenza A H1N1: A/Wisconsin/588/2019 (MW626065)"
 
         nextclade dataset get \
-        --name 'nextstrain/flu/h1n1pdm/ha/MW626062' \
-        --output-dir 'data/h1n1pdm_ha'
+            --name 'nextstrain/flu/h1n1pdm/ha/MW626062' \
+            --output-dir 'data/h1n1pdm_ha'
 
         nextclade run \
             --input-dataset data/h1n1pdm_ha \
@@ -33,8 +33,8 @@ process NEXTCLADE {
         echo "Reference used for Influenza A H1N1: A/California/7/2009 (CY121680)"
 
         nextclade dataset get \
-        --name 'nextstrain/flu/h1n1pdm/ha/CY121680' \
-        --output-dir 'data/h1n1pdm_ha'
+            --name 'nextstrain/flu/h1n1pdm/ha/CY121680' \
+            --output-dir 'data/h1n1pdm_ha'
 
         nextclade run \
             --input-dataset data/h1n1pdm_ha \
@@ -45,8 +45,8 @@ process NEXTCLADE {
         echo "Reference used for Influenza A H3N2: A/Darwin/6/2021 (EPI1857216)"
 
         nextclade dataset get \
-        --name 'nextstrain/flu/h3n2/ha/EPI1857216' \
-        --output-dir 'data/h3n2_ha'
+            --name 'nextstrain/flu/h3n2/ha/EPI1857216' \
+            --output-dir 'data/h3n2_ha'
 
         nextclade run \
             --input-dataset data/h3n2_ha \
@@ -57,8 +57,8 @@ process NEXTCLADE {
         echo "Reference used for Influenza A H3N2: A/Wisconsin/67/2005 (CY163680)"
 
         nextclade dataset get \
-        --name 'nextstrain/flu/h3n2/ha/CY163680' \
-        --output-dir 'data/h3n2_ha'
+            --name 'nextstrain/flu/h3n2/ha/CY163680' \
+            --output-dir 'data/h3n2_ha'
 
         nextclade run \
             --input-dataset data/h3n2_ha \
@@ -69,8 +69,8 @@ process NEXTCLADE {
         echo "Reference used for Influenza B Victoria: B/Brisbane/60/2008 (KX058884)"
 
         nextclade dataset get \
-        --name 'nextstrain/flu/vic/ha/KX058884' \
-        --output-dir 'data/vic_ha'
+            --name 'nextstrain/flu/vic/ha/KX058884' \
+            --output-dir 'data/vic_ha'
 
         nextclade run \
             --input-dataset data/vic_ha \
@@ -80,6 +80,7 @@ process NEXTCLADE {
     
     nextclade.py \
         -i "output/nextclade.csv" \
+        --subtype ${subtype} \
         -o "variant_table.tsv" \
         --sigpep "sigpep_table.tsv"
     """

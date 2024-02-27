@@ -4,6 +4,6 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - nextclade=3.0.0
+  - nextclade=3.0.1
   - python=3.9.7
   - pandas=1.5.3

@@ -109,7 +109,7 @@ def main():
                     f"Found H3N2 sequence of segment {segment}, the sequence will not be processed"
                 )
                 SeqIO.write(record, 'h3n2_other_seg.fasta', 'fasta')
-        elif subtype == 'H0N0':
+        elif subtype == 'H0N0' or subtype == "HN":
             if segment == 'HA':
                 with open(vic, 'a') as output:
                     SeqIO.write(record, output, 'fasta')
