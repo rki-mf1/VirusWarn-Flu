@@ -19,7 +19,7 @@ def get_pos_start(
 #    numbers = re.findall(r'\d+', text)
 #    return int(numbers[1]) if numbers else None
 
-def change_numbering(
+def change_numbering_h1n1(
     pattern: str,
 ) -> Tuple[str, str]:
     specified_gene = pattern.split(":")[0]
@@ -34,6 +34,44 @@ def change_numbering(
         return pattern, numbering
     elif specified_gene == "SigPep":
         # SigPep has a length of 17 in Nexclade
+        return pattern, specified_gene
+    else:
+        raise KeyError("Unknown specified target gene!")
+    
+def change_numbering_h3n2(
+    pattern: str,
+) -> Tuple[str, str]:
+    specified_gene = pattern.split(":")[0]
+    mut = pattern.split(":")[1]
+
+    if specified_gene == "HA1":
+        # HA1 has a length of 329 in Nexclade
+        return pattern, mut
+    elif specified_gene == "HA2":
+        # HA2 has a length of 221 in Nexclade
+        numbering = mut[0] + str(int(mut[1:-1]) + 329) + mut[-1]
+        return pattern, numbering
+    elif specified_gene == "SigPep":
+        # SigPep has a length of 16 in Nexclade
+        return pattern, specified_gene
+    else:
+        raise KeyError("Unknown specified target gene!")
+    
+def change_numbering_vic(
+    pattern: str,
+) -> Tuple[str, str]:
+    specified_gene = pattern.split(":")[0]
+    mut = pattern.split(":")[1]
+
+    if specified_gene == "HA1":
+        # HA1 has a length of 183 in Nexclade
+        return pattern, mut
+    elif specified_gene == "HA2":
+        # HA2 has a length of 224 in Nexclade
+        numbering = mut[0] + str(int(mut[1:-1]) + 183) + mut[-1]
+        return pattern, numbering
+    elif specified_gene == "SigPep":
+        # SigPep has a length of 15 in Nexclade
         return pattern, specified_gene
     else:
         raise KeyError("Unknown specified target gene!")
@@ -54,10 +92,21 @@ def build_dataframe(
 
     nextclade_aa_pattern = []
     aa_pattern = []
-    for i in df_temp["aa_pattern"]:
-        res1, res2 = change_numbering(i)
-        nextclade_aa_pattern.append(res1)
-        aa_pattern.append(res2)
+    if subtype == 'h1n1':
+        for i in df_temp["aa_pattern"]:
+            res1, res2 = change_numbering_h1n1(i)
+            nextclade_aa_pattern.append(res1)
+            aa_pattern.append(res2)
+    elif subtype == 'h3n2':
+        for i in df_temp["aa_pattern"]:
+            res1, res2 = change_numbering_h3n2(i)
+            nextclade_aa_pattern.append(res1)
+            aa_pattern.append(res2)
+    elif subtype == 'vic':
+        for i in df_temp["aa_pattern"]:
+            res1, res2 = change_numbering_vic(i)
+            nextclade_aa_pattern.append(res1)
+            aa_pattern.append(res2)
     df_temp["nextclade_aa_pattern"] = nextclade_aa_pattern
     df_temp["aa_pattern"] = aa_pattern
 

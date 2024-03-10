@@ -42,33 +42,20 @@ nextflow run main.nf --help
 ## Running FluWarnSystem
 
 ```bash
-cd vocal-flu
-conda activate nextflow
 nextflow run main.nf \
      -profile conda,local \
-     --fasta 'path/to/input/fasta' 
+     --fasta 'test/openflu_h1n1.fasta' \
+     --metadata 'test/metadata_h1n1.xlsx'
 ```
 
-### Running FluWarnSystem with splitting (Input from FluPipe)
+### Running FluWarnSystem with splitting (Input from OpenFlu)
 
 ```bash
-cd vocal-flu
-conda activate nextflow
 nextflow run main.nf \
      -profile conda,local \
-     --fasta 'path/to/input/fasta' \
-     --split 'FluPipe'
-```
-
-### Running FluWarnSystem with PSL alignment
-
-```bash
-cd vocal-flu
-conda activate nextflow
-nextflow run main.nf \
-     -profile conda,local \
-     --fasta 'path/to/input/fasta' \
-     --psl true
+     --fasta 'test/openflu_combi.fasta' \
+     --metadata 'test/metadata_combi.xlsx' \
+     --split 'OpenFlu'
 ```
 
 ## Parameter list
@@ -102,13 +89,20 @@ qc                       If set to true, a QC report will be generated from the 
 ```
 
 
+# Data
+
+For further information on the tables that are used for the ranking, please take a look at the subfolders [`A(H1N1)pdm09`](data/A(H1N1)pdm09/), [`A(H3N2)`](data/A(H3N2)/) and [`B(Victoria)`](data/B(Victoria)/) of the folder [`data`](data/) depending on the subtype you are interested in and the READMEs that are provided there.
+
+For further instructions for test runs and information on the used data, please take a look at the folder [`test`](test/) and the README that is provided there.
+
+
 # Contact
 
 Did you find a bug?🐛 Suggestion/Feedback/Feature request?👨‍💻
 Please visit [GitHub Issues](https://github.com/rki-mf1/vocal-flu/issues)
 
 For business inquiries or professional support requests 🍺
-Please contact Dr. Hölzer, Martin(<HoelzerM@rki.de>) or Dr. Richard, Hugues (<RichardH@rki.de>)
+Please contact Christina Kirschbaum (<KirschbaumC@rki.de>) or Dr. Hugues Richard (<RichardH@rki.de>)
 
 
 # Acknowledgments

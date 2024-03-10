@@ -25,8 +25,8 @@ def get_substrings(
     """
     if mode == 'FluPipe' or mode == 'flupipe':
         split_id = seq_id.split("|")
-        subtype = split_id[2].split("/")[1].strip()
-        segment = split_id[3].strip()
+        subtype = split_id[5].split("/")[1].strip()
+        segment = split_id[6].strip()
     elif mode == 'GISAID' or mode == 'gisaid':
         split_id = seq_id.split("|")
         subtype = split_id[-1].split("/")[1].strip()
@@ -109,7 +109,7 @@ def main():
                     f"Found H3N2 sequence of segment {segment}, the sequence will not be processed"
                 )
                 SeqIO.write(record, 'h3n2_other_seg.fasta', 'fasta')
-        elif subtype == 'H0N0' or subtype == "HN":
+        elif subtype == 'H0N0' or subtype == "HN" or subtype == "B":
             if segment == 'HA':
                 with open(vic, 'a') as output:
                     SeqIO.write(record, output, 'fasta')

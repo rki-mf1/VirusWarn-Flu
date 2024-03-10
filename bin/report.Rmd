@@ -224,7 +224,7 @@ if (params$metadata == ""){
     
     if (length(missing) != 0) {
       for (i in 1:length(missing)){
-        new_row <- list(week = toString(missing[[i]]), alert_level = 'black', count = 0)
+        new_row <- list(week = missing[[i]], alert_level = 'black', count = 0)
         df_bar <- rbind(df_bar, new_row)
       }
     }
@@ -241,7 +241,11 @@ if (params$metadata == ""){
     hoverinfo='text',
     hovertext=~paste0("<b>Week: </b>", week, "<br><b>Group: </b>", alert_level, "<br><b># of sequences: </b>", count)
   ) %>% 
-    layout(yaxis = list(title = 'Count'), barmode = 'stack')
+    layout(
+      xaxis = list(title = 'Week (Collection Date)'), 
+      yaxis = list(title = 'Count'), 
+      barmode = 'stack'
+    )
 }
 ```
 
