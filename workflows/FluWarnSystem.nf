@@ -41,7 +41,7 @@ workflow FLUWARNSYSTEM {
     input_fasta = Channel.fromPath( file("${params.fasta}", checkIfExists: true) )
 
     rmd = Channel.fromPath( file("bin/report.Rmd", checkIfExists: true) )
-    qc_rmd = Channel.fromPath( file("bin/qc-report.Rmd", checkIfExists: true) )
+    qc_rmd = Channel.fromPath( file("bin/qc_report.Rmd", checkIfExists: true) )
 
     if (params.metadata != '') {
         metadata = Channel.fromPath( file("${params.metadata}", checkIfExists: true) )

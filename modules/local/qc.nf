@@ -11,7 +11,7 @@ process QC {
 
     output:
         path "qc_table.tsv",   emit: qc_table
-        path "qc-report.html", emit: qc_report
+        path "qc_report.html", emit: qc_report
 
     script:
     """
@@ -23,7 +23,7 @@ process QC {
 
     Rscript --vanilla -e \
         "rmarkdown::render(input = \'${qc_rmd}\', \\
-        output_file = \'qc-report.html\', \\
+        output_file = \'qc_report.html\', \\
         params = list(
             fasta = \'${input_fasta}\', \\
             qc_table = \'qc_table.tsv\', \\
@@ -34,6 +34,6 @@ process QC {
     stub:
     """
     touch qc_table.tsv
-    touch qc-report.html
+    touch qc_report.html
     """
 }

@@ -2,7 +2,11 @@
 title: "Report FluWarnSystem `r Sys.Date()`"
 author: "FluWarnSystem"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
 params:
   fasta: ""
   metadata: ""
@@ -16,35 +20,10 @@ params:
 ---
 
 <style>
-    body .main-container {
-        max-width: 1800px;
-    }
+  body .main-container {
+      max-width: 1600px;
+  }
 </style>
-
-
-
-
-#### Table of contents
-
-- [Overview](#item-zero)
-
-- [Group RED](#item-one)
-
-- [Group ORANGE](#item-two)
-
-- [Group YELLOW](#item-three)
-
-- [Group GREY](#item-four)
-
-- [Group BLACK](#item-five)
-
-- [Reference sequences](#item-six)
-
-- [MOC table](#item-seven)
-
-- [ROI table](#item-eight)
-
-
 
 
 #### List of Abbrevations
@@ -124,7 +103,6 @@ black_table <- filter(samples, alert_level == 'black')
 ```
 
 
-<a id="item-zero"></a>
 
 ## Overview
 
@@ -249,7 +227,7 @@ if (params$metadata == ""){
 }
 ```
 
-<a id="item-one"></a>
+
 
 ## Group <span style="color: red;">RED</span> {.tabset .tabset-fade}
 #### *Sequences with at least 1 MOC and 5 or more MOC & ROI*
@@ -276,7 +254,7 @@ cat(paste0('> ', 'Sequences in Group RED: ', nrow(red_table)))
 
 ### Lollipop Plot
 
-```{r red lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r red lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else {
@@ -464,7 +442,7 @@ if (nrow(red_table) == 0){
 
 ### Heatmap
 
-```{r red heatmap, out.width="1200px", out.height="800px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r red heatmap, out.width="1000px", out.height="800px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(red_table) == 0)){
   names <- vector(mode = "character", length = length(red_table$ID))
   df_names <- cbind(red_table, names)
@@ -597,7 +575,6 @@ if (nrow(red_table) == 0){
 ```
 
 
-<a id="item-two"></a>
 
 ## Group <span style="color: orange;">ORANGE</span> {.tabset .tabset-fade}
 #### *Sequences with at least 1 MOC and 3 or more MOC & ROI*
@@ -624,7 +601,7 @@ cat(paste0('> ', 'Sequences in Group ORANGE: ', nrow(orange_table)))
 
 ### Lollipop Plot
 
-```{r orange lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r orange lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
@@ -812,7 +789,7 @@ if (nrow(orange_table) == 0){
 
 ### Heatmap
 
-```{r orange heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r orange heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(orange_table) == 0)){
   names <- vector(mode = "character", length = length(orange_table$ID))
   df_names <- cbind(orange_table, names)
@@ -945,7 +922,6 @@ if (nrow(orange_table) == 0){
 ```
 
 
-<a id="item-three"></a>
 
 ## Group <span style="color: #FFEA00;">YELLOW</span> {.tabset .tabset-fade}
 #### *Sequences with 0 MOC and 25 or more PM and 7 or less ROI*
@@ -973,7 +949,7 @@ cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 
 ### Lollipop Plot
 
-```{r yellow lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r yellow lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else {
@@ -1161,7 +1137,7 @@ if (nrow(yellow_table) == 0){
 
 ### Heatmap
 
-```{r yellow heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r yellow heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(yellow_table) == 0)){
   names <- vector(mode = "character", length = length(yellow_table$ID))
   df_names <- cbind(yellow_table, names)
@@ -1294,7 +1270,6 @@ if (nrow(yellow_table) == 0){
 ```
 
 
-<a id="item-four"></a>
 
 ## Group <span style="color: lightgrey;">GREY</span> {.tabset .tabset-fade}
 #### *Sequences with 25 or more PM and 8 or more ROI*
@@ -1321,7 +1296,7 @@ cat(paste0('> ', 'Sequences in Group GREY: ', nrow(grey_table)))
 
 ### Lollipop Plot
 
-```{r grey lollipop, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grey lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(grey_table) == 0){
   cat("No sequences in Group GREY")
 } else {
@@ -1509,7 +1484,7 @@ if (nrow(grey_table) == 0){
 
 ### Heatmap
 
-```{r grey heatmap, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r grey heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(grey_table) == 0)){
   names <- vector(mode = "character", length = length(grey_table$ID))
   df_names <- cbind(grey_table, names)
@@ -1642,7 +1617,6 @@ if (nrow(grey_table) == 0){
 ```
 
 
-<a id="item-five"></a>
 
 ## Group <span style="color: black;">BLACK</span>
 
@@ -1728,7 +1702,6 @@ if (nrow(black_table) == 0){
 ```
 
 
-<a id="item-six"></a>
 
 ## Reference sequences
 

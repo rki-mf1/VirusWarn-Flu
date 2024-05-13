@@ -2,7 +2,11 @@
 title: "QC Report FluWarnSystem `r Sys.Date()`"
 author: "FluWarnSystem"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
 params:
   fasta: ""
   qc_table: "qc_table.tsv"
@@ -10,20 +14,11 @@ params:
 ---
 
 <style>
-    body .main-container {
-        max-width: 1800px;
-    }
+  body .main-container {
+      max-width: 1600px;
+  }
 </style>
 
-
-
-#### Table of contents
-
-- [Overview](#item-zero)
-
-- [Processed Sequences](#item-one)
-
-- [Skipped Sequences](#item-two)
 
 
 ```{r setup, include=FALSE}
@@ -50,7 +45,6 @@ row.names(skipped) <- NULL
 ```
 
 
-<a id="item-zero"></a>
 
 ## Overview
 
@@ -84,7 +78,6 @@ plot_ly(labels = labels, values = values, type = "pie", marker = list(colors = c
 ```
 
 
-<a id="item-one"></a>
 
 ## Processed Sequences {.tabset .tabset-fade}
 
@@ -126,7 +119,7 @@ if (nrow(seq) == 0){
 
 ### QC Status
 
-```{r qc status, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r qc status, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(seq) == 0){
   cat("All sequences were skipped")
 } else {  
@@ -152,7 +145,7 @@ if (nrow(seq) == 0){
 
 ### Alignment score
 
-```{r alignment, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r alignment, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(seq) == 0){
   cat("All sequences were skipped")
 } else {
@@ -176,7 +169,7 @@ if (nrow(seq) == 0){
 
 ### Coverage
 
-```{r coverage, out.width="1200px", echo=FALSE, message=FALSE, warning=FALSE}
+```{r coverage, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (nrow(seq) == 0){
   cat("All sequences were skipped")
 } else {  
@@ -198,7 +191,6 @@ if (nrow(seq) == 0){
 ```
 
 
-<a id="item-two"></a>
 
 ## Skipped Sequences 
 
