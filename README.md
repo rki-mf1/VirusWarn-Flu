@@ -16,10 +16,16 @@ The tool is based on <a href="https://github.com/rki-mf1/vocal"><strong>VOCAL</s
 To run the pipeline, you need to have `conda` and `Nextflow` installed and set up.
 All other dependencies will be installed over `conda` in the pipeline.
 
-To install `conda`, use the following bash commands:
+To install `conda`, use the following bash commands if you are working on **Linux**:
 ```bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+To install `conda`, use the following bash commands if you are working on **Mac**:
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
+bash Miniconda3-latest-MacOSX-arm64.sh
 ```
 
 Then, `Nextflow` an be installed over `conda`:
@@ -28,9 +34,9 @@ conda create -n nextflow -c bioconda nextflow
 conda activate nextflow
 ```
 
-The usher repository can be cloned from Git:
+The FluWarnSystem repository can be cloned from Git:
 ```bash
-git clone https://github.com/rki-mf1/vocal-flu.git
+git clone https://github.com/rki-mf1/FluWarnSystem.git
 ```
 
 ### Call help
@@ -86,6 +92,11 @@ split                    If the input fasta file contains sequences of more than
                          [ default: '' ]
 qc                       If set to true, a QC report will be generated from the Nextclade output.
                          [ default: true ]
+strict                   Run process with strict alert levels (without orange). Choose 'y'.
+                         [ default: 'n' ]
+season                   The Influenza season from which the input sequences are.
+                         Important for checking on substitutions that are fixed in the population.
+                         [ default: '22/23' ]
 ```
 
 
@@ -96,10 +107,22 @@ For further information on the tables that are used for the ranking, please take
 For further instructions for test runs and information on the used data, please take a look at the folder [`test`](test/) and the README that is provided there.
 
 
+# How to interprete result.
+
+VOCAL output an alert level in four different colours which can be classified into 3 ratings.
+
+| Alert color | Description |      Impact | 
+| ----------- | ----------- | ----------- |
+| Red | Variants with a high number of MOCs and ROIs that can be dangerous.     | HIGH |
+| Orange | Variants in the orange level have less MOC and ROI than the ones in the red level and are therefore considered less dangerous but still concerning.   | MODERATE |
+| Pink | Variants that accumulate a high number of ROIs or PMs are sorted in the pink level for further inspection.   | MODERATE |
+| Grey | The remaining variants are assigned to the black category.             | LOW |
+
+
 # Contact
 
 Did you find a bug?🐛 Suggestion/Feedback/Feature request?👨‍💻
-Please visit [GitHub Issues](https://github.com/rki-mf1/vocal-flu/issues)
+Please visit [GitHub Issues](https://github.com/rki-mf1/FluWarnSystem/issues)
 
 For business inquiries or professional support requests 🍺
 Please contact Christina Kirschbaum (<KirschbaumC@rki.de>) or Dr. Hugues Richard (<RichardH@rki.de>)

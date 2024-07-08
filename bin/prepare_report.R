@@ -36,6 +36,11 @@ option_list <- list(
     default = FALSE, 
     action = "store_true",
     help = "Write more output to the console",
+  ),
+  make_option(
+    c("--strict"), 
+    default = "n", 
+    help = "FluWarnSystem runs in strict mode",
   )
 )
 
@@ -189,13 +194,20 @@ var_pheno_score_summary = suppressMessages(
   ungroup()
 )
 
-alert_colors = c(
-  "red" = "#FF2400",     # alert 
-  "orange" = "orange",   # weak alert
-  "yellow" = "#FFEA00",  # accumulation alert
-  "grey" = "slategrey",  # sequencing error alert
-  "black" = "black"      # no alert
-)
+if (args$strict == "y"){
+  alert_colors = c(
+    "red" = "#FF2400",      # alert 
+    "pink" = "pink",        # accumulation alert
+    "grey" = "slategrey"   # no alert
+  )
+} else {
+  alert_colors = c(
+    "red" = "#FF2400",      # alert 
+    "orange" = "orange",    # weak alert
+    "pink" = "pink",        # accumulation alert
+    "grey" = "slategrey"   # no alert
+  )
+}
 alert_level = factor(names(alert_colors), ordered = TRUE)
 
 var_pheno_summary_wide = var_pheno_score_summary %>%
@@ -242,25 +254,41 @@ compute_alert_levels_v1 <- function(pheno_table_wide){
   if(! "s_moc_D" %in% colnames(pheno_table_wide)){pheno_table_wide$s_moc_D = 0}
   if(! "s_moc_I" %in% colnames(pheno_table_wide)){pheno_table_wide$s_moc_I = 0}
   
-  pheno_table_wide_with_alert = pheno_table_wide %>%
-    mutate(
-      s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
-      alert_level =
-       case_when(
-         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
-             (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
-         (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
-             (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
-         (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-            ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
-            ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
-         (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-            ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-            ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
-         (((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-           ((s_roi_M + s_roi_D + s_roi_I) >= 8)) ~ "grey",
-         TRUE ~ "black"
-       ))
+  if (args$strict == "y") {
+    pheno_table_wide_with_alert = pheno_table_wide %>%
+      mutate(
+        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
+        alert_level =
+          case_when(
+            (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
+                (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+               ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
+               ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "pink", # accumulation alert roi
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+               ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
+               ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "pink", # accumulation alert pm
+            TRUE ~ "grey"
+          ))
+  } else {
+    pheno_table_wide_with_alert = pheno_table_wide %>%
+      mutate(
+        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
+        alert_level =
+         case_when(
+           (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
+               (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
+           (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
+               (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
+           (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
+              ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "pink", # accumulation alert roi
+           (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
+              ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "pink", # accumulation alert pm
+           TRUE ~ "grey"
+         ))
+  }
   return(pheno_table_wide_with_alert)
 }
 
@@ -277,7 +305,7 @@ write.table(
 mutations_per_alert_level = suppressMessages(
   var_pheno_summary_wide_with_alert  %>%
   ungroup() %>%
-  filter(alert_level != "black") %>%
+  filter(alert_level != "grey") %>%
   select(ID, alert_level) %>%
   distinct() %>% ## WARNING THIS IS A HOTFIX
   inner_join(var_pheno_wide_filter %>% ungroup() %>% select(ID, aa_pattern)) %>%
@@ -345,7 +373,7 @@ log_info("*** Writing Results ***")
 
 common_mutations_in_clusters = suppressMessages(
   samples_with_alert %>%
-  filter(alert_level != "black") %>%
+  filter(alert_level != "grey") %>%
   inner_join(var_pheno_wide_filter) %>%
   group_by(alert_level, cluster_ID_in_alert_level) %>%
   summarise(

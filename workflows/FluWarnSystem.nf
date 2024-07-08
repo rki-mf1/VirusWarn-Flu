@@ -10,7 +10,7 @@ if (params.help) { exit 0, helpMSG() }
 // Parameters sanity checking
 Set valid_params = ['cores', 'max_cores', 'memory', 'help',
                     'fasta', 'ref', 'metadata', 'subtype', 
-                    'qc', 'split',
+                    'qc', 'split', 'strict', 'season',
                     'output', 'split_dir', 'qc_dir', 'nextclade_dir', 
                     'annot_dir', 'report_dir', 'runinfo_dir',
                     'publish_dir_mode', 'conda_cache_dir',
@@ -53,18 +53,40 @@ workflow FLUWARNSYSTEM {
 
         if (params.subtype == 'h1n1') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H1N1)pdm09"
-            if (params.ref == 'old') {
-                moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA_California.tsv", checkIfExists: true) )
+
+            if (params.season == '19/20' || '20/21' || '21/22' || '22/23'){
+                fixed_table = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2019-2023_Wisconsin.csv", checkIfExists: true) )
+            } else if (params.season == '09/10' || '10/11' || '11/12' || '12/13' || '13/14' || '14/15'){
+                fixed_table = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2009-2015_California.csv", checkIfExists: true) )
             } else {
-                moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
+                exit 1,
+                "ERROR: $params.season is an invalid input for the parameter season! Check if you choose an available season and put the /!"
             }
+
+            moc_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
             roi_table = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
         } else if (params.subtype == 'h3n2') {
             log.info"INFO: FluWarnSystem is running for Influenza A(H3N2)"
+
+            if (params.season ==  '21/22' || '22/23'){
+                fixed_table = Channel.fromPath( file("data/A(H3N2)/fixed_2021-2023_Darwin.csv", checkIfExists: true) )
+            } else {
+                exit 1,
+                "ERROR: $params.season is an invalid input for the parameter season! Check if you choose an available season and put the /!"
+            }
+
             moc_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_moc_HA.tsv", checkIfExists: true) )
             roi_table = Channel.fromPath( file("data/A(H3N2)/table_h3n2_roi.csv", checkIfExists: true) )
         } else if (params.subtype == 'vic') {
             log.info"INFO: FluWarnSystem is running for Influenza B(Victoria)"
+
+            if (params.season ==  '21/22' || '22/23'){
+                fixed_table = Channel.fromPath( file("data/B(Victoria)/fixed_2021-2023_Brisbane.csv", checkIfExists: true) )
+            } else {
+                exit 1,
+                "ERROR: $params.season is an invalid input for the parameter season! Check if you choose an available season and put the /!"
+            }
+
             moc_table = Channel.fromPath( file("data/B(Victoria)/table_vic_moc_HA.tsv", checkIfExists: true) )
             roi_table = Channel.fromPath( file("data/B(Victoria)/table_vic_roi.csv", checkIfExists: true) )
         } else {
@@ -72,11 +94,20 @@ workflow FLUWARNSYSTEM {
             "ERROR: $params.subtype is an invalid input for the parameter subtype!\n Please choose between h1n1, h3n2, vic!\n"
         }
 
-        FLUWARNSYSTEM_SUB ( input_fasta, moc_table, roi_table, rmd, qc_rmd, metadata )
+        FLUWARNSYSTEM_SUB ( input_fasta, moc_table, roi_table, fixed_table, rmd, qc_rmd, metadata )
 
     } else if (params.split == 'FluPipe' || 'flupipe' || 'GISAID' || 'gisaid' || 'OpenFlu' || 'openflu') {
         log.info"INFO: FluWarnSystem is running in SPLIT mode $params.split"
         log.info"INFO: Seperate reports for all subtypes in the dataset are generated"
+
+        if (params.season ==  '21/22' || '22/23'){
+            fixed_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2019-2023_Wisconsin.csv", checkIfExists: true) )
+            fixed_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/fixed_2021-2023_Darwin.csv", checkIfExists: true) )
+            fixed_table_vic = Channel.fromPath( file("data/B(Victoria)/fixed_2021-2023_Brisbane.csv", checkIfExists: true) )
+        } else {
+            exit 1,
+            "ERROR: $params.season is an invalid input for the parameter season! Check if you choose an available season and put the /!"
+        }
 
         moc_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_moc_HA.tsv", checkIfExists: true) )
         roi_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/table_h1n1_roi.csv", checkIfExists: true) )
@@ -89,15 +120,15 @@ workflow FLUWARNSYSTEM {
 
         FLUWARNSYSTEM_SPLIT ( 
             input_fasta, 
-            moc_table_h1n1, roi_table_h1n1,
-            moc_table_h3n2, roi_table_h3n2, 
-            moc_table_vic, roi_table_vic, 
+            moc_table_h1n1, roi_table_h1n1, fixed_table_h1n1,
+            moc_table_h3n2, roi_table_h3n2, fixed_table_h3n2,
+            moc_table_vic, roi_table_vic, fixed_table_vic,
             rmd, qc_rmd, metadata 
         )
 
     } else {
         exit 1, 
-            "ERROR: $params.split is an invalid input for the parameter split!\n Please choose between FluPipe, GISAID and OpenFlu!\n"
+        "ERROR: $params.split is an invalid input for the parameter split!\n Please choose between FluPipe, GISAID and OpenFlu!\n"
     }
 
 }
@@ -123,6 +154,7 @@ def helpMSG() {
     Workflow: FluWarnSystem
 
     ${c_yellow}Usage examples:${c_reset}
+    nextflow run main.nf -profile conda,local --fasta 'test/openflu_h1n1.fasta' --metadata 'test/metadata_h1n1.xlsx'
 
     ${c_yellow}Input options:${c_reset}
     ${c_green} --fasta ${c_reset}           REQUIRED! Path to the input fasta file.
@@ -150,6 +182,11 @@ def helpMSG() {
                         [ default: $params.split ]
     ${c_green} --qc ${c_reset}              If set to true, a QC report will be generated from the Nextclade output.
                         [ default: $params.qc ]
+    ${c_green} --strict ${c_reset}          Run process with strict alert levels (without orange).
+                        [ default: $params.strict ]
+    ${c_green} --season ${c_reset}          The Influeza season from which the input sequences are.
+                        Important for checking on substitutions that are fixed in the population.
+                        [ default: $params.season ]
 
     ${c_yellow}Computing options:${c_reset}
     --cores                  Max cores per process for local use [default: $params.cores]

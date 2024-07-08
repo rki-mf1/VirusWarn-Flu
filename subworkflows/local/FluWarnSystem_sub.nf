@@ -8,6 +8,7 @@ workflow FLUWARNSYSTEM_SUB {
         input_fasta
         moc_table
         roi_table
+        fixed_table
         rmd
         qc_rmd
         metadata
@@ -19,13 +20,13 @@ workflow FLUWARNSYSTEM_SUB {
             QC ( input_fasta, NEXTCLADE.out.nextclade, qc_rmd, params.subtype )
         }
 
-        ANNOTATION ( NEXTCLADE.out.variant_table, moc_table, roi_table )
+        ANNOTATION ( NEXTCLADE.out.variant_table, moc_table, roi_table, fixed_table )
 
         REPORT ( 
             NEXTCLADE.out.variant_table,
-            ANNOTATION.out.variants_phenotypes, rmd, 
+            ANNOTATION.out.variants_phenotypes_filtered, rmd, 
             input_fasta, moc_table, roi_table, 
-            metadata, params.subtype, 'report.html' 
+            metadata, fixed_table, 'report.html' 
         )
 
     emit:

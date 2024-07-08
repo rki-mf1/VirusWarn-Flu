@@ -5,13 +5,13 @@ process REPORT {
 
     input:
         path variant_table
-        path variants_phenotypes
+        path variants_phenotypes_filtered
         path rmd
         path input_fasta
         path moc_table
         path roi_table
         val metadata
-        val subtype
+        val fixed_table
         val output
 
     output:
@@ -23,10 +23,15 @@ process REPORT {
     """
     echo "Step 3: Detect and alert emerging variants"
 
+    echo "Preparing csv for report..."
+
     prepare_report.R \
-        -f ${variants_phenotypes} \
+        -f ${variants_phenotypes_filtered} \
         -s "fluwarnsystem-alerts-samples-all.csv" \
-        -c "fluwarnsystem-alerts-clusters-summaries-all.csv"
+        -c "fluwarnsystem-alerts-clusters-summaries-all.csv" \
+        --strict ${params.strict}
+
+    echo "Knitting HTML report..."
 
     Rscript --vanilla -e \
         "rmarkdown::render(input = \'${rmd}\', \\
@@ -35,12 +40,15 @@ process REPORT {
             fasta = \'${input_fasta}\', \\
             metadata = \'${metadata}\', \\
             variant_table = \'${variant_table}\', \\
-            annot_table = \'${variants_phenotypes}\', \\
+            annot_table = \'${variants_phenotypes_filtered}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
-            subtype = \'${subtype}\', \\
+            subtype = \'${params.subtype}\', \\
             ref = \'${params.ref}\', \\
             moc = \'${moc_table}\', \\
-            roi = \'${roi_table}\')
+            roi = \'${roi_table}\', \\
+            strict = \'${params.strict}\',
+            fixed = \'${fixed_table}\',
+            season = \'${params.season}\')
         )"
     """
 

@@ -93,7 +93,6 @@ def main():
             if segment == 'HA':
                 with open(h1n1, 'a') as output:
                     SeqIO.write(record, output, 'fasta')
-            #elif segment == 'NA':
             else:
                 print(
                     f"Found H1N1 sequence of segment {segment}, the sequence will not be processed"
@@ -103,7 +102,6 @@ def main():
             if segment == 'HA':
                 with open(h3n2, 'a') as output:
                     SeqIO.write(record, output, 'fasta')
-            #elif segment == 'NA':
             else:
                 print(
                     f"Found H3N2 sequence of segment {segment}, the sequence will not be processed"
@@ -113,7 +111,6 @@ def main():
             if segment == 'HA':
                 with open(vic, 'a') as output:
                     SeqIO.write(record, output, 'fasta')
-            #elif segment == 'NA':
             else:
                 print(
                     f"Found Victoria sequence of segment {segment}, the sequence will not be processed"
