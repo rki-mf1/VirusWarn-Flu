@@ -197,14 +197,14 @@ var_pheno_score_summary = suppressMessages(
 if (args$strict == "y"){
   alert_colors = c(
     "red" = "#FF2400",      # alert 
-    "pink" = "pink",        # accumulation alert
+    "yellow" = "#FFEA00",        # accumulation alert
     "grey" = "slategrey"   # no alert
   )
 } else {
   alert_colors = c(
     "red" = "#FF2400",      # alert 
     "orange" = "orange",    # weak alert
-    "pink" = "pink",        # accumulation alert
+    "yellow" = "#FFEA00",        # accumulation alert
     "grey" = "slategrey"   # no alert
   )
 }
@@ -264,10 +264,10 @@ compute_alert_levels_v1 <- function(pheno_table_wide){
                 (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
             (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
                ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
-               ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "pink", # accumulation alert roi
+               ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
             (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
                ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-               ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "pink", # accumulation alert pm
+               ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
             TRUE ~ "grey"
           ))
   } else {
@@ -282,10 +282,10 @@ compute_alert_levels_v1 <- function(pheno_table_wide){
                (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
               ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
-              ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "pink", # accumulation alert roi
+              ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
               ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-              ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "pink", # accumulation alert pm
+              ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
            TRUE ~ "grey"
          ))
   }

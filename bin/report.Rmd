@@ -31,7 +31,7 @@ params:
 
 #### List of Abbrevations
 
-Sequences are sent to a category (Red, Orange, Pink, Grey) according to their mutation profile. FluWarnSystem counts the amount of mutations in 3 categories:
+Sequences are sent to a category (Red, Orange, Yellow, Grey) according to their mutation profile. FluWarnSystem counts the amount of mutations in 3 categories:
 
 **MOC - Mutation of Concern**
 
@@ -95,7 +95,7 @@ red_table <- filter(samples, alert_level == 'red') %>%
 orange_table <- filter(samples, alert_level == 'orange') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
-pink_table <- filter(samples, alert_level == 'pink') %>%
+yellow_table <- filter(samples, alert_level == 'yellow') %>%
   select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
 
 grey_table <- filter(samples, alert_level == 'grey') %>%
@@ -142,7 +142,7 @@ if (params$metadata != ""){
 ### Sequences per Group
 
 ```{r bar plot,  out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
-alert_colors <- c(grey = "lightgrey", pink= "deeppink", orange = "orange", red = "red")
+alert_colors <- c(grey = "lightgrey", yellow= "#FFEA00", orange = "orange", red = "red")
 
 if (params$metadata == ""){
   df_bar <- samples %>%
@@ -150,7 +150,7 @@ if (params$metadata == ""){
     summarize(count = n())
   
   if (nrow(df_bar) != 5){
-    all_alert_levels <- c('grey', 'pink', 'orange', 'red')
+    all_alert_levels <- c('grey', 'yellow', 'orange', 'red')
     missing_alert_levels <- setdiff(all_alert_levels, df_bar$alert_level)
     for (level in missing_alert_levels){
       new_row <- data.frame(alert_level = level, count = 0)
@@ -158,7 +158,7 @@ if (params$metadata == ""){
     }
   }
   
-  order_levels <- c('grey', 'pink', 'orange', 'red')
+  order_levels <- c('grey', 'yellow', 'orange', 'red')
   df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
   count_sum <- sum(df_bar$count)
   
@@ -208,7 +208,7 @@ if (params$metadata == ""){
     }
   }
   
-  order_levels <- c('grey', 'pink', 'orange', 'red')
+  order_levels <- c('grey', 'yellow', 'orange', 'red')
   df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
   
   plot_ly(
@@ -933,43 +933,43 @@ if (params$strict == 'y'){
 
 
 
-## Group <span style="color: deeppink;">PINK</span> {.tabset .tabset-fade}
+## Group <span style="color: #FFEA00;">YELLOW</span> {.tabset .tabset-fade}
 #### *Sequences with 0 MOC and 25 or more PM and 7 or less ROI*
 #### *Sequences with 0 MOC and 8 or more ROI and 24 or less PM*
 
-```{r pink data, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in pink_table["ID"]) {
+```{r yellow data, echo=FALSE, message=FALSE, warning=FALSE}
+for (i in yellow_table["ID"]) {
   new <- str_remove_all(i, "%space%")
-  pink_table["ID"][pink_table["ID"] == i] <- new
+  yellow_table["ID"][yellow_table["ID"] == i] <- new
 }
 
-names(pink_table)[2] <- "Mutations"
-names(pink_table)[3] <- "Deletions"
-names(pink_table)[4] <- "Insertions"
+names(yellow_table)[2] <- "Mutations"
+names(yellow_table)[3] <- "Deletions"
+names(yellow_table)[4] <- "Insertions"
 
-pink_table_copy <- pink_table
+yellow_table_copy <- yellow_table
 
-for (i in pink_table["Mutations"]){
+for (i in yellow_table["Mutations"]){
   new <- str_split(i, ",")
-  pink_table["Mutations"][pink_table["Mutations"] == i] <- new
+  yellow_table["Mutations"][yellow_table["Mutations"] == i] <- new
 }
 
-cat(paste0('> ', 'Sequences in Group PINK: ', nrow(pink_table)))
+cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 ```
 
 ### Lollipop Plot
 
-```{r pink lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
-if (nrow(pink_table) == 0){
-  cat("No sequences in Group PINK")
+```{r yellow lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(yellow_table) == 0){
+  cat("No sequences in Group YELLOW")
 } else {
   clade <- c()
-  for(i in pink_table$ID){
+  for(i in yellow_table$ID){
     new_clade <- variant_table[variant_table$ID == i, "clade"]
     clade <- c(clade, new_clade[[1]])
   }
   
-  clade_df <- pink_table
+  clade_df <- yellow_table
   clade_df$clade <- clade
   clade_df$group <- "All Sequences"
   clade_unique <- unique(clade)
@@ -1062,7 +1062,7 @@ if (nrow(pink_table) == 0){
           "<br><b># of substitutions: </b>", list_len, list
           )
         ),
-        color="deeppink",
+        color="#FFEA00",
         size=3
       )
   }
@@ -1084,50 +1084,50 @@ if (nrow(pink_table) == 0){
 
 ### Table
 
-```{r pink table, echo=FALSE, message=FALSE, warning=FALSE}
-if (nrow(pink_table) == 0){
-  cat("No sequences in Group PINK")
+```{r yellow table, echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(yellow_table) == 0){
+  cat("No sequences in Group YELLOW")
 } else {
-  for (i in pink_table_copy["Mutations"]){
+  for (i in yellow_table_copy["Mutations"]){
     new <- gsub(",([[:alpha:]])", ", \\1", i)
-    pink_table_copy["Mutations"][pink_table_copy["Mutations"] == i] <- new
+    yellow_table_copy["Mutations"][yellow_table_copy["Mutations"] == i] <- new
   }
   
-  subtype <- vector(mode = "character", length = length(pink_table_copy$ID))
-  seg <- vector(mode = "character", length = length(pink_table_copy$ID))
+  subtype <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  seg <- vector(mode = "character", length = length(yellow_table_copy$ID))
   
-  moc <- vector(mode = "character", length = length(pink_table_copy$ID))
-  roi <- vector(mode = "character", length = length(pink_table_copy$ID))
-  pm <- vector(mode = "character", length = length(pink_table_copy$ID))
+  moc <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  roi <- vector(mode = "character", length = length(yellow_table_copy$ID))
+  pm <- vector(mode = "character", length = length(yellow_table_copy$ID))
     
-  pink_table_copy <- cbind(subtype, seg, pink_table_copy, moc, roi, pm)
+  yellow_table_copy <- cbind(subtype, seg, yellow_table_copy, moc, roi, pm)
     
-  names(pink_table_copy)[1] <- "Subtype"
-  names(pink_table_copy)[2] <- "Segment"
+  names(yellow_table_copy)[1] <- "Subtype"
+  names(yellow_table_copy)[2] <- "Segment"
   
-  names(pink_table_copy)[4] <- "Substitutions"
+  names(yellow_table_copy)[4] <- "Substitutions"
   
-  names(pink_table_copy)[7] <- "MOC"
-  names(pink_table_copy)[8] <- "ROI"
-  names(pink_table_copy)[9] <- "PM"
+  names(yellow_table_copy)[7] <- "MOC"
+  names(yellow_table_copy)[8] <- "ROI"
+  names(yellow_table_copy)[9] <- "PM"
   
-  for (j in 1:length(pink_table_copy$ID)){
-    pink_table_copy$Subtype[j] <- str_split_i(pink_table_copy$ID[j], "\\|", -1)
-    pink_table_copy$Segment[j] <- str_split_i(pink_table_copy$ID[j], "\\|", 2)
+  for (j in 1:length(yellow_table_copy$ID)){
+    yellow_table_copy$Subtype[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", -1)
+    yellow_table_copy$Segment[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", 2)
   }
   
-  for (k in 1:length(pink_table_copy$ID)){
-    temp <- subset(annot_table, ID == pink_table_copy$ID[k])
-    pink_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
-    pink_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
-    pink_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  for (k in 1:length(yellow_table_copy$ID)){
+    temp <- subset(annot_table, ID == yellow_table_copy$ID[k])
+    yellow_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    yellow_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    yellow_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
   }
   
   col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
-  pink_table_copy <- pink_table_copy[, col_order]
+  yellow_table_copy <- yellow_table_copy[, col_order]
   
   datatable(
-    pink_table_copy, 
+    yellow_table_copy, 
     class = 'cell-border stripe', 
     options = list(
       dom = 'lftp', 
@@ -1147,18 +1147,18 @@ if (nrow(pink_table) == 0){
 
 ### Heatmap
 
-```{r pink heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
-if (!(nrow(pink_table) == 0)){
-  names <- vector(mode = "character", length = length(pink_table$ID))
-  df_names <- cbind(pink_table, names)
+```{r yellow heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (!(nrow(yellow_table) == 0)){
+  names <- vector(mode = "character", length = length(yellow_table$ID))
+  df_names <- cbind(yellow_table, names)
   names(df_names)[5] <- "Isolate_Name"
   for (j in 1:length(df_names$ID)){
     df_names$Isolate_Name[j] <- trimws(str_split_i(df_names$ID[j], "\\|", 3))
   }
 }
 
-if (nrow(pink_table) == 0){
-  cat("No sequences in Group PINK")
+if (nrow(yellow_table) == 0){
+  cat("No sequences in Group YELLOW")
 } else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")

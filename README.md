@@ -115,7 +115,7 @@ VOCAL output an alert level in four different colours which can be classified in
 | ----------- | ----------- | ----------- |
 | Red | Variants with a high number of MOCs and ROIs that can be dangerous.     | HIGH |
 | Orange | Variants in the orange level have less MOC and ROI than the ones in the red level and are therefore considered less dangerous but still concerning.   | MODERATE |
-| Pink | Variants that accumulate a high number of ROIs or PMs are sorted in the pink level for further inspection.   | MODERATE |
+| Yellow | Variants that accumulate a high number of ROIs or PMs are sorted in the pink level for further inspection.   | MODERATE |
 | Grey | The remaining variants are assigned to the black category.             | LOW |
 
 
