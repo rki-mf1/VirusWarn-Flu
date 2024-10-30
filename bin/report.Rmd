@@ -1,6 +1,6 @@
 ---
-title: "Report FluWarnSystem `r Sys.Date()`"
-author: "FluWarnSystem"
+title: "Report VirusWarn-Flu `r Sys.Date()`"
+author: "VirusWarn"
 date: "`r Sys.Date()`"
 output: 
   html_document:
@@ -31,7 +31,7 @@ params:
 
 #### List of Abbrevations
 
-Sequences are sent to a category (Red, Orange, Yellow, Grey) according to their mutation profile. FluWarnSystem counts the amount of mutations in 3 categories:
+Sequences are sent to a category (Pink, Red, Orange, Yellow, Grey) according to their mutation profile. FluWarnSystem counts the amount of mutations in 3 categories:
 
 **MOC - Mutation of Concern**
 
@@ -56,6 +56,7 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(readxl)
+library(lubridate)
 
 library(seqinr)
 
@@ -65,41 +66,391 @@ library(plotly)
 library(DT)
 ```
 
+```{r functions, include=FALSE}
+pad_week <- function(week) {
+  parts <- strsplit(week, "-")[[1]]
+  year <- parts[1]
+  week_num <- sprintf("%02d", as.numeric(parts[2])) 
+  return(paste(year, week_num, sep = "-"))
+}
+
+prepare_table <- function(table){
+  for (i in table["ID"]) {
+    new <- str_remove_all(i, "%space%")
+    table["ID"][table["ID"] == i] <- new
+  }
+  
+  names(table)[2] <- "Mutations"
+  names(table)[3] <- "Deletions"
+  names(table)[4] <- "Insertions"
+  names(table)[5] <- "Fixed"
+  
+  table_copy <- table
+  
+  for (i in table["Mutations"]){
+    new <- str_split(i, ",")
+    table["Mutations"][table["Mutations"] == i] <- new
+  }
+  return(list(table = table, table_copy = table_copy))
+}
+
+make_lollipop <- function(table, color){
+  clade <- c()
+  for(i in table$ID){
+    new_clade <- variant_table[variant_table$ID == i, "clade"]
+    clade <- c(clade, new_clade[[1]])
+  }
+  
+  clade_df <- table
+  clade_df$clade <- clade
+  clade_df$group <- "All Sequences"
+  clade_unique <- unique(clade)
+  clade_len <- length(unique(clade))
+  
+  df_list <- list(clade_df)
+  for (i in clade_unique){
+    new_df <- subset(clade_df, clade == i)
+    new_df$group <- i
+    df_list <- c(df_list, list(new_df))
+  }
+  
+  groups <- c()
+  data_list <- list()
+  for (df in df_list){
+    mut_freq <- rep(0, 566)
+    mut_list <- vector(mode = "character", length = 566)
+    mut_list_unique <- vector(mode = "character", length = 566)
+    mut_list_unique_len <- vector(mode = "integer", length = 566)
+    for (i in df["Mutations"]){
+      for(j in i){
+        # get number of mutations at every position
+        ind <- as.integer(str_sub(j, 2, -2))
+        mut_freq[ind] <- mut_freq[ind] + 1
+        # get list of mutations at every position
+        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
+      }
+    }
+    
+    pos <- 1
+    for (i in mut_list){
+      split <- str_split_1(i, " ")
+      p <- 1
+      for (k in split){
+        if (grepl("\\*", k) == TRUE){
+          split[p] <- paste("\\", k, sep = "")
+          print(split[k])
+        }
+        p <- p + 1
+      }
+      unique_mut <- stri_unique(split)
+      for (j in unique_mut[-length(unique_mut)]){
+        count <- str_count(i, j)
+        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
+        mut_list_unique_len[pos] <- mut_list_unique_len[pos] + 1
+      }
+      pos <- pos + 1
+    }
+    
+    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, list_len = mut_list_unique_len, group = df$group[1])
+    groups <- c(groups, df$group[1])
+    data_list <- c(data_list, list(data_temp))
+  }
+  
+  all_false <- rep(FALSE, length(groups)*2)
+  button_list <- list()
+  for (i in 1:length(groups)) {
+    visibility_state <- all_false
+    visibility_state[(2 * i - 1):(i + i)] <- TRUE
+    button_list[[i]] <- list(
+      label = groups[i],
+      method = "update",
+      args = list(list(visible = visibility_state), list(title = groups[i]))
+    )
+  }
+  
+  p <- ggplot() +
+    theme_light() +
+    theme(
+      panel.grid.major.x = element_blank(),
+      panel.border = element_blank(),
+      axis.ticks.x = element_blank()
+    ) +
+    xlab("Amino Acid Position") +
+    ylab("Number of samples") +
+    xlim(c(0,566))
+  
+  for (i in 1:length(groups)) {
+    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
+    row.names(d) <- seq(nrow(d))
+    p <- p + 
+      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
+      geom_point(
+        data = d, 
+        aes(
+          x=x, y=y, 
+          text=paste0(
+          "<b>AA Position: </b>", x, 
+          "<br><b># of samples: </b>", y, 
+          "<br><b># of substitutions: </b>", list_len, list
+          )
+        ),
+        color=color,
+        size=3
+      )
+  }
+  
+  lollipop <- ggplotly(p, tooltip = c("text")) %>% layout(
+    updatemenus=list(
+      list(
+        active=0, 
+        x=0, 
+        y=1.1,
+        xanchor="left",
+        yanchor="bottom",
+        buttons=button_list
+      )
+    )
+  )  
+  
+  return(lollipop)
+}
+  
+make_table <- function(table_copy){
+  for (i in table_copy["Mutations"]){
+    new <- gsub(",([[:alpha:]])", ", \\1", i)
+    table_copy["Mutations"][table_copy["Mutations"] == i] <- new
+  }
+  
+  subtype <- vector(mode = "character", length = length(table_copy$ID))
+  seg <- vector(mode = "character", length = length(table_copy$ID))
+  
+  moc <- vector(mode = "character", length = length(table_copy$ID))
+  roi <- vector(mode = "character", length = length(table_copy$ID))
+  pm <- vector(mode = "character", length = length(table_copy$ID))
+  fixed <- vector(mode = "character", length = length(table_copy$ID))
+    
+  table_copy <- cbind(subtype, seg, table_copy, moc, roi, pm)
+    
+  names(table_copy)[1] <- "Subtype"
+  names(table_copy)[2] <- "Segment"
+  
+  names(table_copy)[4] <- "Substitutions"
+  names(table_copy)[7] <- "Fixed"
+  
+  names(table_copy)[8] <- "MOC"
+  names(table_copy)[9] <- "ROI"
+  names(table_copy)[10] <- "PM"
+  names(table_copy)[11] <- "F"
+  
+  for (j in 1:length(table_copy$ID)){
+    table_copy$Subtype[j] <- str_split_i(table_copy$ID[j], "\\|", -1)
+    table_copy$Segment[j] <- str_split_i(table_copy$ID[j], "\\|", 2)
+  }
+  
+  for (k in 1:length(table_copy$ID)){
+    temp <- subset(annot_table, ID == table_copy$ID[k])
+    table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
+    table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
+    table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
+  }
+  
+  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "F", "Substitutions", "Deletions", "Insertions", "Fixed")
+  table_copy <- table_copy[, col_order]
+  
+  result_table <- datatable(
+    table_copy, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'lftp', 
+      lengthMenu = c(5, 10, 20, 50),
+      pageLength = 5,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      columnDefs = list(list(width = 350, targets = c(3,7,10))),
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
+  )  
+  
+  return(result_table)
+}
+
+make_heatmap <- function(metadata, df_names){
+  df_mutations_filtered <- merge(metadata, df_names, by="Isolate_Name") %>%
+    select(year_week, Mutations) %>%
+    unnest(Mutations) 
+    
+  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
+    select(year_week) %>%
+    group_by(year_week) %>%
+    summarize(count = n())
+  
+  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="year_week") %>%
+    select(Mutations, year_week, count)
+  
+  df_mutations_merged <- df_mutations_merged_all %>%
+    drop_na(year_week)
+  
+  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
+    df_na <- df_week %>% drop_na(year_week)
+    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
+  }
+
+  names(df_mutations_merged)[1] <- "aa_profile"
+  names(df_mutations_merged)[3] <- "week_count_total"
+
+  df_mutations_grouped <- df_mutations_merged %>% 
+    group_by(year_week, week_count_total, aa_profile) %>% 
+    summarize(freq = n()) %>%
+    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
+    ungroup() 
+  
+  pos <- c()
+  for (i in df_mutations_grouped["aa_profile"]){
+    # get position of mutation
+    ind <- as.integer(str_sub(i, 2, -2))
+    pos <- c(pos, ind)
+  }
+  df_mutations_grouped$position <- pos
+  
+  df_mutations_sorted <- df_mutations_grouped %>%
+    arrange(-position)
+  
+  plot.data <- df_mutations_sorted %>% 
+    select(year_week, aa_profile, freq, perc)
+  
+  plot.data$year_week <- sapply(plot.data$year_week, pad_week)
+  
+  year_weeks <- as.Date(paste0(plot.data$year_week, "-1"), format="%Y-%U-%u")
+  week_sequence <- seq(min(year_weeks), max(year_weeks), by = "week")
+  full_seq <- format(week_sequence, "%Y-%U")
+  missing <- setdiff(full_seq, plot.data$year_week)
+  missing <- missing[!grepl("-00$", missing)]
+  
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(year_week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
+      plot.data <- rbind(plot.data, new_row)
+    }
+  }
+  
+  aa_tick <- unique(plot.data$aa_profile)
+  week_tick <- unique(plot.data$year_week)
+  
+  heatmap <- plot_ly(
+    plot.data, x=~year_week, y=~aa_profile, z=~perc, 
+    reversescale=TRUE, 
+    xgap=1.5, ygap=1.5, 
+    type="heatmap", 
+    colorbar=list(
+      title=('<b>Proportion</b>')), 
+      hoverinfo='text', 
+      text=~paste0("<b>Week: </b>", .data$year_week, "<br><b>Substitution: </b>", .data$aa_profile, "<br><b>% of samples: </b>", .data$perc)
+    ) %>% 
+    layout(
+      plot_bgcolor="#F8F8F8", 
+      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(nticks=length(aa_tick), title="<b>Substitutions</b>", showgrid=FALSE, categoryorder="trace"),
+      legend=list(orientation='v', xanchor="right", yanchor="top")
+    ) 
+  
+  df_mutations_bar <- merge(metadata, df_names, by="Isolate_Name") %>%
+    select(year_week, Mutations)
+  
+  bar.data <- df_mutations_bar %>%
+    select(year_week) %>%
+    group_by(year_week) %>%
+    summarize(count = n())
+  
+  bar.data$year_week <- sapply(bar.data$year_week, pad_week)
+  
+  if (length(missing) != 0){
+    for (i in 1:length(missing)){
+      new_row <- list(year_week = missing[[i]], count = 0)
+      bar.data <- rbind(bar.data, new_row)
+    }
+  }
+  
+  bar.data <- bar.data %>% 
+    arrange(year_week)
+  
+  barplot <- plot_ly(
+    bar.data, x=~year_week, y=~count, 
+    type = "bar",
+    marker = list(color = "grey"),
+    hoverinfo='text',
+    hovertext=~paste0("<b>Week: </b>", .data$year_week, "<br><b># of samples: </b>", .data$count)
+  ) %>%
+    layout(
+      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
+      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
+    )
+  
+  heatmap <- subplot(
+    heatmap, barplot, 
+    nrows = 2, heights = c(0.8, 0.2), 
+    shareX = TRUE, titleY = TRUE
+  )
+  
+  return(heatmap)
+}
+```
+
 ```{r data, include=FALSE}
 fasta <- read.fasta(params$fasta)
 
 variant_table <- read.delim(params$variant_table)
 annot_table <- read.delim(params$annot_table)
-samples <- read.delim(params$alert_samples, sep = ',')
+
+samples <- read.delim(params$alert_samples, sep = ',') %>%
+  filter(!ID %in% c('ROI_ERROR_CATCH', 'NotAnnotated_ERROR_CATCH'))
 
 moc_table <- read.delim(params$moc)
 roi_table <- read.delim(params$roi, sep = ',')
 
-fixed_table <- read.delim(params$fixed, sep = ',')
-fixed_table <- filter(fixed_table, Season == params$season)
+fixed_table <- read.delim(params$fixed, sep = ',') %>% 
+  filter(Season == params$season)
 
 if(params$metadata != ''){
   metadata <- read_excel(params$metadata)
+  metadata$year <- year(metadata$Collection_Date)
+  metadata$week <- week(metadata$Collection_Date)
+  metadata$year_week <- paste(metadata$year, metadata$week, sep = "-")
 }
 ```
 
-```{r remove, include=FALSE}
-samples <- samples %>%
-  filter(!ID %in% c('ROI_ERROR_CATCH', 'NotAnnotated_ERROR_CATCH'))
-```
-
 ```{r data groups, include=FALSE}
+pink_table <- filter(samples, alert_level == 'pink') %>%
+  select(
+    ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I, ListMutationsSelected_F,
+    nMutationsTotal, nMutationsTotal_M, nMutationsTotal_D, nMutationsTotal_I, nMutationsTotal_F
+  )
+
 red_table <- filter(samples, alert_level == 'red') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+  select(
+    ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I, ListMutationsSelected_F,
+    nMutationsTotal, nMutationsTotal_M, nMutationsTotal_D, nMutationsTotal_I, nMutationsTotal_F
+  )
 
 orange_table <- filter(samples, alert_level == 'orange') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+  select(
+    ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I, ListMutationsSelected_F,
+    nMutationsTotal, nMutationsTotal_M, nMutationsTotal_D, nMutationsTotal_I, nMutationsTotal_F
+  )
 
 yellow_table <- filter(samples, alert_level == 'yellow') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+  select(
+    ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I, ListMutationsSelected_F,
+    nMutationsTotal, nMutationsTotal_M, nMutationsTotal_D, nMutationsTotal_I, nMutationsTotal_F
+  )
 
 grey_table <- filter(samples, alert_level == 'grey') %>%
-  select(ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I)
+  select(
+    ID, ListMutationsSelected_M, ListMutationsSelected_D, ListMutationsSelected_I, ListMutationsSelected_F,
+    nMutationsTotal, nMutationsTotal_M, nMutationsTotal_D, nMutationsTotal_I, nMutationsTotal_F
+  )
 ```
 
 
@@ -142,7 +493,7 @@ if (params$metadata != ""){
 ### Sequences per Group
 
 ```{r bar plot,  out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
-alert_colors <- c(grey = "lightgrey", yellow= "#FFEA00", orange = "orange", red = "red")
+alert_colors <- c(grey = "lightgrey", yellow= "#FFEA00", orange = "orange", red = "red", pink = "deeppink")
 
 if (params$metadata == ""){
   df_bar <- samples %>%
@@ -150,7 +501,7 @@ if (params$metadata == ""){
     summarize(count = n())
   
   if (nrow(df_bar) != 5){
-    all_alert_levels <- c('grey', 'yellow', 'orange', 'red')
+    all_alert_levels <- c('grey', 'yellow', 'orange', 'red', 'pink')
     missing_alert_levels <- setdiff(all_alert_levels, df_bar$alert_level)
     for (level in missing_alert_levels){
       new_row <- data.frame(alert_level = level, count = 0)
@@ -158,7 +509,7 @@ if (params$metadata == ""){
     }
   }
   
-  order_levels <- c('grey', 'yellow', 'orange', 'red')
+  order_levels <- c('grey', 'yellow', 'orange', 'red', 'pink')
   df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
   count_sum <- sum(df_bar$count)
   
@@ -184,21 +535,22 @@ if (params$metadata == ""){
   }
   
   df_week_all <- merge(df_names_all, metadata, by="Isolate_Name", all.x = TRUE) %>% 
-    select(Isolate_Name, alert_level, ID, Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date)))
+    select(Isolate_Name, alert_level, ID, Collection_Date, year_week)
     
-  df_week_all$week <- replace(df_week_all$week, is.na(df_week_all$week), "unassigned")
+  df_week_all$year_week <- replace(df_week_all$year_week, is.na(df_week_all$year_week), "unassigned")
   
   df_bar <- df_week_all %>%
-    group_by(alert_level, week) %>%
+    group_by(alert_level, year_week) %>%
     summarize(count = n())
   
-  df_bar$week <- as.numeric(df_bar$week)
+  df_bar$year_week <- sapply(df_bar$year_week, pad_week)
   
-  df_bar_temp <- subset(df_bar, week != "unassigned")
+  df_bar_temp <- subset(df_bar, year_week != "unassigned")
   if (nrow(df_bar_temp) != 0) {
-    full_seq <- seq(min(df_bar_temp$week), max(df_bar_temp$week))
-    missing <- setdiff(full_seq, df_bar_temp$week)
+    year_weeks <- na.omit(as.Date(paste0(df_bar$year_week, "-1"), format="%Y-%U-%u"))
+    week_sequence <- seq(min(year_weeks), max(year_weeks), by = "week")
+    full_seq <- format(week_sequence, "%Y-%U")
+    missing <- setdiff(full_seq, df_bar_temp$year_week)
     
     if (length(missing) != 0) {
       for (i in 1:length(missing)){
@@ -208,16 +560,16 @@ if (params$metadata == ""){
     }
   }
   
-  order_levels <- c('grey', 'yellow', 'orange', 'red')
+  order_levels <- c('grey', 'yellow', 'orange', 'red', 'pink')
   df_bar$alert_level <- factor(df_bar$alert_level, levels = order_levels)
   
   plot_ly(
-    df_bar, x = ~week, y = ~count, 
+    df_bar, x = ~year_week, y = ~count, 
     type = 'bar', 
     color = ~alert_level,
     colors = alert_colors,
     hoverinfo='text',
-    hovertext=~paste0("<b>Week: </b>", week, "<br><b>Group: </b>", alert_level, "<br><b># of sequences: </b>", count)
+    hovertext=~paste0("<b>Week: </b>", year_week, "<br><b>Group: </b>", alert_level, "<br><b># of sequences: </b>", count)
   ) %>% 
     layout(
       xaxis = list(title = 'Week (Collection Date)'), 
@@ -229,25 +581,72 @@ if (params$metadata == ""){
 
 
 
+## Group <span style="color: deeppink;">PINK</span> {.tabset .tabset-fade}
+#### *Sequences with at least 1 MOC and 3 or more MOC & ROI and at least 1 MOC or ROI which is fixed*
+
+```{r pink data, echo=FALSE, message=FALSE, warning=FALSE}
+result <- prepare_table(pink_table)
+pink_table <- result$table
+pink_table_copy <- result$table_copy
+
+cat(paste0('> ', 'Sequences in Group PINK: ', nrow(pink_table)))
+```
+
+### Lollipop Plot
+
+```{r pink lollipop, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(pink_table) == 0){
+  cat("No sequences in Group PINK")
+} else {
+  pink_lollipop <- make_lollipop(pink_table, "deeppink")
+  pink_lollipop
+}
+```
+
+### Table
+
+```{r pink table, echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(pink_table) == 0){
+  cat("No sequences in Group PINK")
+} else {
+  pink_result_table <- make_table(pink_table_copy)
+  pink_result_table
+}
+```
+
+### Heatmap
+
+```{r pink heatmap, out.width="1000px", out.height="800px", echo=FALSE, message=FALSE, warning=FALSE}
+if (!(nrow(pink_table) == 0)){
+  pink_names <- vector(mode = "character", length = length(pink_table$ID))
+  pink_df_names <- cbind(pink_table, pink_names)
+  names(pink_df_names)[5] <- "Isolate_Name"
+  for (j in 1:length(pink_df_names$ID)){
+    pink_df_names$Isolate_Name[j] <- trimws(str_split_i(pink_df_names$ID[j], "\\|", 3))
+  }
+}
+
+if (nrow(pink_table) == 0){
+  cat("No sequences in Group PINK")
+} else if (params$metadata == ""){
+  cat("The heatmap shows the frequency of mutations over the weeks.")
+  cat("No metadata file with collection dates was given, so no heatmap was generated.")
+} else if (any(pink_df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
+  cat("No metadata given for the sequences of Group PINK.")
+} else {
+  pink_heatmap <- make_heatmap(metadata, pink_df_names)
+  pink_heatmap
+}
+```
+
+
 ## Group <span style="color: red;">RED</span> {.tabset .tabset-fade}
 #### *Sequences with at least 1 MOC and 5 or more MOC & ROI*
 
 ```{r red data, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in red_table["ID"]) {
-  new <- str_remove_all(i, "%space%")
-  red_table["ID"][red_table["ID"] == i] <- new
-}
-
-names(red_table)[2] <- "Mutations"
-names(red_table)[3] <- "Deletions"
-names(red_table)[4] <- "Insertions"
-
-red_table_copy <- red_table
-
-for (i in red_table["Mutations"]){
-  new <- str_split(i, ",")
-  red_table["Mutations"][red_table["Mutations"] == i] <- new
-}
+result <- prepare_table(red_table)
+red_table <- result$table
+red_table_copy <- result$table_copy
 
 cat(paste0('> ', 'Sequences in Group RED: ', nrow(red_table)))
 ```
@@ -258,122 +657,8 @@ cat(paste0('> ', 'Sequences in Group RED: ', nrow(red_table)))
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else {
-  clade <- c()
-  for(i in red_table$ID){
-    new_clade <- variant_table[variant_table$ID == i, "clade"]
-    clade <- c(clade, new_clade[[1]])
-  }
-  
-  clade_df <- red_table
-  clade_df$clade <- clade
-  clade_df$group <- "All Sequences"
-  clade_unique <- unique(clade)
-  clade_len <- length(unique(clade))
-  
-  df_list <- list(clade_df)
-  for (i in clade_unique){
-    new_df <- subset(clade_df, clade == i)
-    new_df$group <- i
-    df_list <- c(df_list, list(new_df))
-  }
-  
-  groups <- c()
-  data_list <- list()
-  for (df in df_list){
-    mut_freq <- rep(0, 566)
-    mut_list <- vector(mode = "character", length = 566)
-    mut_list_unique <- vector(mode = "character", length = 566)
-    mut_list_unique_len <- vector(mode = "integer", length = 566)
-    for (i in df["Mutations"]){
-      for(j in i){
-        # get number of mutations at every position
-        ind <- as.integer(str_sub(j, 2, -2))
-        mut_freq[ind] <- mut_freq[ind] + 1
-        # get list of mutations at every position
-        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-      }
-    }
-    
-    pos <- 1
-    for (i in mut_list){
-      split <- str_split_1(i, " ")
-      p <- 1
-      for (k in split){
-        if (grepl("\\*", k) == TRUE){
-          split[p] <- paste("\\", k, sep = "")
-          print(split[k])
-        }
-        p <- p + 1
-      }
-      unique_mut <- stri_unique(split)
-      for (j in unique_mut[-length(unique_mut)]){
-        count <- str_count(i, j)
-        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
-        mut_list_unique_len[pos] <- mut_list_unique_len[pos] + 1
-      }
-      pos <- pos + 1
-    }
-    
-    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, list_len = mut_list_unique_len, group = df$group[1])
-    groups <- c(groups, df$group[1])
-    data_list <- c(data_list, list(data_temp))
-  }
-  
-  all_false <- rep(FALSE, length(groups)*2)
-  button_list <- list()
-  for (i in 1:length(groups)) {
-    visibility_state <- all_false
-    visibility_state[(2 * i - 1):(i + i)] <- TRUE
-    button_list[[i]] <- list(
-      label = groups[i],
-      method = "update",
-      args = list(list(visible = visibility_state), list(title = groups[i]))
-    )
-  }
-  
-  p <- ggplot() +
-    theme_light() +
-    theme(
-      panel.grid.major.x = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks.x = element_blank()
-    ) +
-    xlab("Amino Acid Position") +
-    ylab("Number of samples") +
-    xlim(c(0,566))
-  
-  for (i in 1:length(groups)) {
-    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
-    row.names(d) <- seq(nrow(d))
-    p <- p + 
-      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-      geom_point(
-        data = d, 
-        aes(
-          x=x, y=y, 
-          text=paste0(
-          "<b>AA Position: </b>", x, 
-          "<br><b># of samples: </b>", y, 
-          "<br><b># of substitutions: </b>", list_len, list
-          )
-        ),
-        color="red",
-        size=3
-      )
-  }
-  
-  ggplotly(p, tooltip = c("text")) %>% layout(
-    updatemenus=list(
-      list(
-        active=0, 
-        x=0, 
-        y=1.1,
-        xanchor="left",
-        yanchor="bottom",
-        buttons=button_list
-      )
-    )
-  )
+  red_lollipop <- make_lollipop(red_table, "red")
+  red_lollipop
 }
 ```
 
@@ -383,60 +668,8 @@ if (nrow(red_table) == 0){
 if (nrow(red_table) == 0){
   cat("No sequences in Group RED")
 } else {
-  for (i in red_table_copy["Mutations"]){
-    new <- gsub(",([[:alpha:]])", ", \\1", i)
-    red_table_copy["Mutations"][red_table_copy["Mutations"] == i] <- new
-  }
-  
-  subtype <- vector(mode = "character", length = length(red_table_copy$ID))
-  seg <- vector(mode = "character", length = length(red_table_copy$ID))
-  
-  moc <- vector(mode = "character", length = length(red_table_copy$ID))
-  roi <- vector(mode = "character", length = length(red_table_copy$ID))
-  pm <- vector(mode = "character", length = length(red_table_copy$ID))
-    
-  red_table_copy <- cbind(subtype, seg, red_table_copy, moc, roi, pm)
-    
-  names(red_table_copy)[1] <- "Subtype"
-  names(red_table_copy)[2] <- "Segment"
-  
-  names(red_table_copy)[4] <- "Substitutions"
-  
-  names(red_table_copy)[7] <- "MOC"
-  names(red_table_copy)[8] <- "ROI"
-  names(red_table_copy)[9] <- "PM"
-  
-  for (j in 1:length(red_table_copy$ID)){
-    red_table_copy$Subtype[j] <- str_split_i(red_table_copy$ID[j], "\\|", -1)
-    red_table_copy$Segment[j] <- str_split_i(red_table_copy$ID[j], "\\|", 2)
-  }
-  
-  for (k in 1:length(red_table_copy$ID)){
-    temp <- subset(annot_table, ID == red_table_copy$ID[k])
-    red_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
-    red_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
-    red_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
-  }
-  
-  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
-  red_table_copy <- red_table_copy[, col_order]
-  
-  datatable(
-    red_table_copy, 
-    class = 'cell-border stripe', 
-    options = list(
-      dom = 'lftp', 
-      lengthMenu = c(5, 10, 20, 50),
-      pageLength = 5,
-      searchHighlight = TRUE,
-      autoWidth= TRUE,
-      columnDefs = list(list(width = 350, targets = c(3,7))),
-      initComplete = JS(
-      "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-      "}")
-    )
-  )
+  red_result_table <- make_table(red_table_copy)
+  red_result_table
 }
 ```
 
@@ -444,11 +677,11 @@ if (nrow(red_table) == 0){
 
 ```{r red heatmap, out.width="1000px", out.height="800px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(red_table) == 0)){
-  names <- vector(mode = "character", length = length(red_table$ID))
-  df_names <- cbind(red_table, names)
-  names(df_names)[5] <- "Isolate_Name"
-  for (j in 1:length(df_names$ID)){
-    df_names$Isolate_Name[j] <- trimws(str_split_i(df_names$ID[j], "\\|", 3))
+  red_names <- vector(mode = "character", length = length(red_table$ID))
+  red_df_names <- cbind(red_table, red_names)
+  names(red_df_names)[5] <- "Isolate_Name"
+  for (j in 1:length(red_df_names$ID)){
+    red_df_names$Isolate_Name[j] <- trimws(str_split_i(red_df_names$ID[j], "\\|", 3))
   }
 }
 
@@ -457,120 +690,11 @@ if (nrow(red_table) == 0){
 } else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
-} else if (any(df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
+} else if (any(red_df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
   cat("No metadata given for the sequences of Group RED.")
 } else {
-  df_mutations_filtered <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations) %>%
-    unnest(Mutations) %>%
-    mutate(week = week(ymd(Collection_Date)))
-    
-  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
-    select(Mutations, week, count)
-  
-  df_mutations_merged <- df_mutations_merged_all %>%
-    drop_na(week)
-  
-  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
-    df_na <- df_week %>% drop_na(week)
-    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
-  }
-
-  names(df_mutations_merged)[1] <- "aa_profile"
-  names(df_mutations_merged)[3] <- "week_count_total"
-
-  df_mutations_grouped <- df_mutations_merged %>% 
-    group_by(week, week_count_total, aa_profile) %>% 
-    summarize(freq = n()) %>%
-    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
-    ungroup() 
-  
-  pos <- c()
-  for (i in df_mutations_grouped["aa_profile"]){
-    # get position of mutation
-    ind <- as.integer(str_sub(i, 2, -2))
-    pos <- c(pos, ind)
-  }
-  df_mutations_grouped$position <- pos
-  
-  df_mutations_sorted <- df_mutations_grouped %>%
-    arrange(-position)
-  
-  plot.data <- df_mutations_sorted %>% 
-    select(week, aa_profile, freq, perc)
-
-  full_seq <- seq(min(plot.data$week), max(plot.data$week))
-  missing <- setdiff(full_seq, plot.data$week)
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-      plot.data <- rbind(plot.data, new_row)
-    }
-  }
-  
-  aa_tick <- unique(plot.data$aa_profile)
-  week_tick <- unique(plot.data$week)
-  
-  heatmap <- plot_ly(
-    plot.data, x=~week, y=~aa_profile, z=~perc, 
-    reversescale=TRUE, 
-    xgap=1.5, ygap=1.5, 
-    type="heatmap", 
-    colorbar=list(
-      title=('<b>Proportion</b>')), 
-      hoverinfo='text', 
-      text=~paste0("<b>Week: </b>", .data$week, "<br><b>Substitution: </b>", .data$aa_profile, "<br><b>% of samples: </b>", .data$perc)
-    ) %>% 
-    layout(
-      plot_bgcolor="#F8F8F8", 
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(nticks=length(aa_tick), title="<b>Substitutions</b>", showgrid=FALSE, categoryorder="trace"),
-      legend=list(orientation='v', xanchor="right", yanchor="top")
-    ) 
-  
-  df_mutations_bar <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations)
-  
-  bar.data <- df_mutations_bar %>%
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], count = 0)
-      bar.data <- rbind(bar.data, new_row)
-    }
-  }
-  
-  bar.data <- bar.data %>% 
-    arrange(week)
-  
-  barplot <- plot_ly(
-    bar.data, x=~week, y=~count, 
-    type = "bar",
-    marker = list(color = "grey"),
-    hoverinfo='text',
-    hovertext=~paste0("<b>Week: </b>", .data$week, "<br><b># of samples: </b>", .data$count)
-  ) %>%
-    layout(
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
-    )
-  
-  subplot(
-    heatmap, barplot, 
-    nrows = 2, heights = c(0.8, 0.2), 
-    shareX = TRUE, titleY = TRUE
-  )
+  red_heatmap <- make_heatmap(metadata, red_df_names)
+  red_heatmap
 }
 ```
 
@@ -583,21 +707,9 @@ if (nrow(red_table) == 0){
 if (params$strict == 'y'){
   cat("FluWarnSystem runs in strict mode, the ORANGE level is not available.")
 } else {
-  for (i in orange_table["ID"]) {
-    new <- str_remove_all(i, "%space%")
-    orange_table["ID"][orange_table["ID"] == i] <- new
-  }
-  
-  names(orange_table)[2] <- "Mutations"
-  names(orange_table)[3] <- "Deletions"
-  names(orange_table)[4] <- "Insertions"
-  
-  orange_table_copy <- orange_table
-  
-  for (i in orange_table["Mutations"]){
-    new <- str_split(i, ",")
-    orange_table["Mutations"][orange_table["Mutations"] == i] <- new
-  }
+  result <- prepare_table(orange_table)
+  orange_table <- result$table
+  orange_table_copy <- result$table_copy
   
   cat(paste0('> ', 'Sequences in Group ORANGE: ', nrow(orange_table)))
 }
@@ -611,122 +723,8 @@ if (params$strict == 'y'){
 } else if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
-  clade <- c()
-  for(i in orange_table$ID){
-    new_clade <- variant_table[variant_table$ID == i, "clade"]
-    clade <- c(clade, new_clade[[1]])
-  }
-  
-  clade_df <- orange_table
-  clade_df$clade <- clade
-  clade_df$group <- "All Sequences"
-  clade_unique <- unique(clade)
-  clade_len <- length(unique(clade))
-  
-  df_list <- list(clade_df)
-  for (i in clade_unique){
-    new_df <- subset(clade_df, clade == i)
-    new_df$group <- i
-    df_list <- c(df_list, list(new_df))
-  }
-  
-  groups <- c()
-  data_list <- list()
-  for (df in df_list){
-    mut_freq <- rep(0, 566)
-    mut_list <- vector(mode = "character", length = 566)
-    mut_list_unique <- vector(mode = "character", length = 566)
-    mut_list_unique_len <- vector(mode = "integer", length = 566)
-    for (i in df["Mutations"]){
-      for(j in i){
-        # get number of mutations at every position
-        ind <- as.integer(str_sub(j, 2, -2))
-        mut_freq[ind] <- mut_freq[ind] + 1
-        # get list of mutations at every position
-        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-      }
-    }
-    
-    pos <- 1
-    for (i in mut_list){
-      split <- str_split_1(i, " ")
-      p <- 1
-      for (k in split){
-        if (grepl("\\*", k) == TRUE){
-          split[p] <- paste("\\", k, sep = "")
-          print(split[k])
-        }
-        p <- p + 1
-      }
-      unique_mut <- stri_unique(split)
-      for (j in unique_mut[-length(unique_mut)]){
-        count <- str_count(i, j)
-        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
-        mut_list_unique_len[pos] <- mut_list_unique_len[pos] + 1
-      }
-      pos <- pos + 1
-    }
-    
-    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, list_len = mut_list_unique_len, group = df$group[1])
-    groups <- c(groups, df$group[1])
-    data_list <- c(data_list, list(data_temp))
-  }
-  
-  all_false <- rep(FALSE, length(groups)*2)
-  button_list <- list()
-  for (i in 1:length(groups)) {
-    visibility_state <- all_false
-    visibility_state[(2 * i - 1):(i + i)] <- TRUE
-    button_list[[i]] <- list(
-      label = groups[i],
-      method = "update",
-      args = list(list(visible = visibility_state), list(title = groups[i]))
-    )
-  }
-  
-  p <- ggplot() +
-    theme_light() +
-    theme(
-      panel.grid.major.x = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks.x = element_blank()
-    ) +
-    xlab("Amino Acid Position") +
-    ylab("Number of samples") +
-    xlim(c(0,566))
-  
-  for (i in 1:length(groups)) {
-    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
-    row.names(d) <- seq(nrow(d))
-    p <- p + 
-      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-      geom_point(
-        data = d, 
-        aes(
-          x=x, y=y, 
-          text=paste0(
-          "<b>AA Position: </b>", x, 
-          "<br><b># of samples: </b>", y, 
-          "<br><b># of substitutions: </b>", list_len, list
-          )
-        ),
-        color="orange",
-        size=3
-      )
-  }
-  
-  ggplotly(p, tooltip = c("text")) %>% layout(
-    updatemenus=list(
-      list(
-        active=0, 
-        x=0, 
-        y=1.1,
-        xanchor="left",
-        yanchor="bottom",
-        buttons=button_list
-      )
-    )
-  )
+  orange_lollipop <- make_lollipop(pink_table, "orange")
+  orange_lollipop
 }
 ```
 
@@ -738,60 +736,8 @@ if (params$strict == 'y'){
 } else if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
-  for (i in orange_table_copy["Mutations"]){
-    new <- gsub(",([[:alpha:]])", ", \\1", i)
-    orange_table_copy["Mutations"][orange_table_copy["Mutations"] == i] <- new
-  }
-  
-  subtype <- vector(mode = "character", length = length(orange_table_copy$ID))
-  seg <- vector(mode = "character", length = length(orange_table_copy$ID))
-  
-  moc <- vector(mode = "character", length = length(orange_table_copy$ID))
-  roi <- vector(mode = "character", length = length(orange_table_copy$ID))
-  pm <- vector(mode = "character", length = length(orange_table_copy$ID))
-    
-  orange_table_copy <- cbind(subtype, seg, orange_table_copy, moc, roi, pm)
-    
-  names(orange_table_copy)[1] <- "Subtype"
-  names(orange_table_copy)[2] <- "Segment"
-  
-  names(orange_table_copy)[4] <- "Substitutions"
-  
-  names(orange_table_copy)[7] <- "MOC"
-  names(orange_table_copy)[8] <- "ROI"
-  names(orange_table_copy)[9] <- "PM"
-  
-  for (j in 1:length(orange_table_copy$ID)){
-    orange_table_copy$Subtype[j] <- str_split_i(orange_table_copy$ID[j], "\\|", -1)
-    orange_table_copy$Segment[j] <- str_split_i(orange_table_copy$ID[j], "\\|", 2)
-  }
-  
-  for (k in 1:length(orange_table_copy$ID)){
-    temp <- subset(annot_table, ID == orange_table_copy$ID[k])
-    orange_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
-    orange_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
-    orange_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
-  }
-  
-  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
-  orange_table_copy <- orange_table_copy[, col_order]
-  
-  datatable(
-    orange_table_copy, 
-    class = 'cell-border stripe', 
-    options = list(
-      dom = 'lftp', 
-      lengthMenu = c(5, 10, 20, 50),
-      pageLength = 5,
-      searchHighlight = TRUE,
-      autoWidth= TRUE,
-      columnDefs = list(list(width = 350, targets = c(3,7))),
-      initComplete = JS(
-      "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-      "}")
-    )
-  )
+  orange_result_table <- make_table(orange_table_copy)
+  orange_result_table
 }
 ```
 
@@ -799,11 +745,11 @@ if (params$strict == 'y'){
 
 ```{r orange heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(orange_table) == 0)){
-  names <- vector(mode = "character", length = length(orange_table$ID))
-  df_names <- cbind(orange_table, names)
-  names(df_names)[5] <- "Isolate_Name"
-  for (j in 1:length(df_names$ID)){
-    df_names$Isolate_Name[j] <- trimws(str_split_i(df_names$ID[j], "\\|", 3))
+  orange_names <- vector(mode = "character", length = length(orange_table$ID))
+  orange_df_names <- cbind(orange_table, orange_names)
+  names(orange_df_names)[5] <- "Isolate_Name"
+  for (j in 1:length(orange_df_names$ID)){
+    orange_df_names$Isolate_Name[j] <- trimws(str_split_i(orange_df_names$ID[j], "\\|", 3))
   }
 }
 
@@ -814,120 +760,11 @@ if (params$strict == 'y'){
 } else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
-} else if (any(df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
+} else if (any(orange_df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
   cat("No metadata given for the sequences of Group ORANGE.")
 } else {
-  df_mutations_filtered <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations) %>%
-    unnest(Mutations) %>%
-    mutate(week = week(ymd(Collection_Date)))
-    
-  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
-    select(Mutations, week, count)
-  
-  df_mutations_merged <- df_mutations_merged_all %>%
-    drop_na(week)
-  
-  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
-    df_na <- df_week %>% drop_na(week)
-    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
-  }
-
-  names(df_mutations_merged)[1] <- "aa_profile"
-  names(df_mutations_merged)[3] <- "week_count_total"
-
-  df_mutations_grouped <- df_mutations_merged %>% 
-    group_by(week, week_count_total, aa_profile) %>% 
-    summarize(freq = n()) %>%
-    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
-    ungroup() 
-  
-  pos <- c()
-  for (i in df_mutations_grouped["aa_profile"]){
-    # get position of mutation
-    ind <- as.integer(str_sub(i, 2, -2))
-    pos <- c(pos, ind)
-  }
-  df_mutations_grouped$position <- pos
-  
-  df_mutations_sorted <- df_mutations_grouped %>%
-    arrange(-position)
-  
-  plot.data <- df_mutations_sorted %>% 
-    select(week, aa_profile, freq, perc)
-  
-  full_seq <- seq(min(plot.data$week), max(plot.data$week))
-  missing <- setdiff(full_seq, plot.data$week)
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-      plot.data <- rbind(plot.data, new_row)
-    }
-  }
-  
-  aa_tick <- unique(plot.data$aa_profile)
-  week_tick <- unique(plot.data$week)
-  
-  heatmap <- plot_ly(
-    plot.data, x=~week, y=~aa_profile, z=~perc, 
-    reversescale=TRUE, 
-    xgap=1.5, ygap=1.5, 
-    type="heatmap", 
-    colorbar=list(
-      title=('<b>Proportion</b>')), 
-      hoverinfo='text', 
-      text=~paste0("<b>Week: </b>", .data$week, "<br><b>Substitution: </b>", .data$aa_profile, "<br><b>% of samples: </b>", .data$perc)
-    ) %>% 
-    layout(
-      plot_bgcolor="#F8F8F8", 
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(nticks=length(aa_tick), title="<b>Substitutions</b>", showgrid=FALSE, categoryorder="trace"),
-      legend=list(orientation='v', xanchor="right", yanchor="top")
-    ) 
-  
-  df_mutations_bar <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations)
-  
-  bar.data <- df_mutations_bar %>%
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], count = 0)
-      bar.data <- rbind(bar.data, new_row)
-    }
-  }
-  
-  bar.data <- bar.data %>% 
-    arrange(week)
-  
-  barplot <- plot_ly(
-    bar.data, x=~week, y=~count, 
-    type = "bar",
-    marker = list(color = "grey"),
-    hoverinfo='text',
-    hovertext=~paste0("<b>Week: </b>", .data$week, "<br><b># of samples: </b>", .data$count)
-  ) %>%
-    layout(
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
-    )
-  
-  subplot(
-    heatmap, barplot, 
-    nrows = 2, heights = c(0.8, 0.2), 
-    shareX = TRUE, titleY = TRUE
-  )
+  orange_heatmap <- make_heatmap(metadata, orange_df_names)
+  orange_heatmap
 }
 ```
 
@@ -938,21 +775,9 @@ if (params$strict == 'y'){
 #### *Sequences with 0 MOC and 8 or more ROI and 24 or less PM*
 
 ```{r yellow data, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in yellow_table["ID"]) {
-  new <- str_remove_all(i, "%space%")
-  yellow_table["ID"][yellow_table["ID"] == i] <- new
-}
-
-names(yellow_table)[2] <- "Mutations"
-names(yellow_table)[3] <- "Deletions"
-names(yellow_table)[4] <- "Insertions"
-
-yellow_table_copy <- yellow_table
-
-for (i in yellow_table["Mutations"]){
-  new <- str_split(i, ",")
-  yellow_table["Mutations"][yellow_table["Mutations"] == i] <- new
-}
+result <- prepare_table(yellow_table)
+yellow_table <- result$table
+yellow_table_copy <- result$table_copy
 
 cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 ```
@@ -963,122 +788,8 @@ cat(paste0('> ', 'Sequences in Group YELLOW: ', nrow(yellow_table)))
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else {
-  clade <- c()
-  for(i in yellow_table$ID){
-    new_clade <- variant_table[variant_table$ID == i, "clade"]
-    clade <- c(clade, new_clade[[1]])
-  }
-  
-  clade_df <- yellow_table
-  clade_df$clade <- clade
-  clade_df$group <- "All Sequences"
-  clade_unique <- unique(clade)
-  clade_len <- length(unique(clade))
-  
-  df_list <- list(clade_df)
-  for (i in clade_unique){
-    new_df <- subset(clade_df, clade == i)
-    new_df$group <- i
-    df_list <- c(df_list, list(new_df))
-  }
-  
-  groups <- c()
-  data_list <- list()
-  for (df in df_list){
-    mut_freq <- rep(0, 566)
-    mut_list <- vector(mode = "character", length = 566)
-    mut_list_unique <- vector(mode = "character", length = 566)
-    mut_list_unique_len <- vector(mode = "integer", length = 566)
-    for (i in df["Mutations"]){
-      for(j in i){
-        # get number of mutations at every position
-        ind <- as.integer(str_sub(j, 2, -2))
-        mut_freq[ind] <- mut_freq[ind] + 1
-        # get list of mutations at every position
-        mut_list[ind] <- paste(j, mut_list[ind], sep=" ")
-      }
-    }
-    
-    pos <- 1
-    for (i in mut_list){
-      split <- str_split_1(i, " ")
-      p <- 1
-      for (k in split){
-        if (grepl("\\*", k) == TRUE){
-          split[p] <- paste("\\", k, sep = "")
-          print(split[k])
-        }
-        p <- p + 1
-      }
-      unique_mut <- stri_unique(split)
-      for (j in unique_mut[-length(unique_mut)]){
-        count <- str_count(i, j)
-        mut_list_unique[pos] <- paste(mut_list_unique[pos], "<br>", toString(count), j)
-        mut_list_unique_len[pos] <- mut_list_unique_len[pos] + 1
-      }
-      pos <- pos + 1
-    }
-    
-    data_temp <- data.frame(x = seq(1, 566), y = mut_freq, list = mut_list_unique, list_len = mut_list_unique_len, group = df$group[1])
-    groups <- c(groups, df$group[1])
-    data_list <- c(data_list, list(data_temp))
-  }
-  
-  all_false <- rep(FALSE, length(groups)*2)
-  button_list <- list()
-  for (i in 1:length(groups)) {
-    visibility_state <- all_false
-    visibility_state[(2 * i - 1):(i + i)] <- TRUE
-    button_list[[i]] <- list(
-      label = groups[i],
-      method = "update",
-      args = list(list(visible = visibility_state), list(title = groups[i]))
-    )
-  }
-  
-  p <- ggplot() +
-    theme_light() +
-    theme(
-      panel.grid.major.x = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks.x = element_blank()
-    ) +
-    xlab("Amino Acid Position") +
-    ylab("Number of samples") +
-    xlim(c(0,566))
-  
-  for (i in 1:length(groups)) {
-    d <- data_list[[i]][which(data_list[[i]]$y > 0),]
-    row.names(d) <- seq(nrow(d))
-    p <- p + 
-      geom_segment(data = d, aes(x=x, xend=x, y=0, yend=y), color="darkgrey") +
-      geom_point(
-        data = d, 
-        aes(
-          x=x, y=y, 
-          text=paste0(
-          "<b>AA Position: </b>", x, 
-          "<br><b># of samples: </b>", y, 
-          "<br><b># of substitutions: </b>", list_len, list
-          )
-        ),
-        color="#FFEA00",
-        size=3
-      )
-  }
-  
-  ggplotly(p, tooltip = c("text")) %>% layout(
-    updatemenus=list(
-      list(
-        active=0, 
-        x=0, 
-        y=1.1,
-        xanchor="left",
-        yanchor="bottom",
-        buttons=button_list
-      )
-    )
-  )
+  yellow_lollipop <- make_lollipop(yellow_table, "#FFEA00")
+  yellow_lollipop
 }
 ```
 
@@ -1088,60 +799,8 @@ if (nrow(yellow_table) == 0){
 if (nrow(yellow_table) == 0){
   cat("No sequences in Group YELLOW")
 } else {
-  for (i in yellow_table_copy["Mutations"]){
-    new <- gsub(",([[:alpha:]])", ", \\1", i)
-    yellow_table_copy["Mutations"][yellow_table_copy["Mutations"] == i] <- new
-  }
-  
-  subtype <- vector(mode = "character", length = length(yellow_table_copy$ID))
-  seg <- vector(mode = "character", length = length(yellow_table_copy$ID))
-  
-  moc <- vector(mode = "character", length = length(yellow_table_copy$ID))
-  roi <- vector(mode = "character", length = length(yellow_table_copy$ID))
-  pm <- vector(mode = "character", length = length(yellow_table_copy$ID))
-    
-  yellow_table_copy <- cbind(subtype, seg, yellow_table_copy, moc, roi, pm)
-    
-  names(yellow_table_copy)[1] <- "Subtype"
-  names(yellow_table_copy)[2] <- "Segment"
-  
-  names(yellow_table_copy)[4] <- "Substitutions"
-  
-  names(yellow_table_copy)[7] <- "MOC"
-  names(yellow_table_copy)[8] <- "ROI"
-  names(yellow_table_copy)[9] <- "PM"
-  
-  for (j in 1:length(yellow_table_copy$ID)){
-    yellow_table_copy$Subtype[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", -1)
-    yellow_table_copy$Segment[j] <- str_split_i(yellow_table_copy$ID[j], "\\|", 2)
-  }
-  
-  for (k in 1:length(yellow_table_copy$ID)){
-    temp <- subset(annot_table, ID == yellow_table_copy$ID[k])
-    yellow_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
-    yellow_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
-    yellow_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
-  }
-  
-  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
-  yellow_table_copy <- yellow_table_copy[, col_order]
-  
-  datatable(
-    yellow_table_copy, 
-    class = 'cell-border stripe', 
-    options = list(
-      dom = 'lftp', 
-      lengthMenu = c(5, 10, 20, 50),
-      pageLength = 5,
-      searchHighlight = TRUE,
-      autoWidth= TRUE,
-      columnDefs = list(list(width = 350, targets = c(3,7))),
-      initComplete = JS(
-      "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-      "}")
-    )
-  )
+  yellow_result_table <- make_table(yellow_table_copy)
+  yellow_result_table
 }
 ```
 
@@ -1149,11 +808,11 @@ if (nrow(yellow_table) == 0){
 
 ```{r yellow heatmap, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
 if (!(nrow(yellow_table) == 0)){
-  names <- vector(mode = "character", length = length(yellow_table$ID))
-  df_names <- cbind(yellow_table, names)
-  names(df_names)[5] <- "Isolate_Name"
-  for (j in 1:length(df_names$ID)){
-    df_names$Isolate_Name[j] <- trimws(str_split_i(df_names$ID[j], "\\|", 3))
+  yellow_names <- vector(mode = "character", length = length(yellow_table$ID))
+  yellow_df_names <- cbind(yellow_table, yellow_names)
+  names(yellow_df_names)[5] <- "Isolate_Name"
+  for (j in 1:length(yellow_df_names$ID)){
+    yellow_df_names$Isolate_Name[j] <- trimws(str_split_i(yellow_df_names$ID[j], "\\|", 3))
   }
 }
 
@@ -1162,120 +821,11 @@ if (nrow(yellow_table) == 0){
 } else if (params$metadata == ""){
   cat("The heatmap shows the frequency of mutations over the weeks.")
   cat("No metadata file with collection dates was given, so no heatmap was generated.")
-} else if (any(df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
+} else if (any(yellow_df_names$Isolate_Name %in% metadata$Isolate_Name) == FALSE){
   cat("No metadata given for the sequences of Group YELLOW.")
 } else {
-  df_mutations_filtered <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations) %>%
-    unnest(Mutations) %>%
-    mutate(week = week(ymd(Collection_Date)))
-    
-  df_week <- merge(metadata, df_names, by="Isolate_Name") %>% 
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  df_mutations_merged_all <- merge(df_mutations_filtered, df_week, by="week") %>%
-    select(Mutations, week, count)
-  
-  df_mutations_merged <- df_mutations_merged_all %>%
-    drop_na(week)
-  
-  if (nrow(df_mutations_merged_all) - nrow(df_mutations_merged) != 0){
-    df_na <- df_week %>% drop_na(week)
-    cat(paste0(sum(df_week$count) - sum(df_na$count), " Sequences were dropped from the heatmap due to the wrong format of the Collection Date!"))
-  }
-
-  names(df_mutations_merged)[1] <- "aa_profile"
-  names(df_mutations_merged)[3] <- "week_count_total"
-
-  df_mutations_grouped <- df_mutations_merged %>% 
-    group_by(week, week_count_total, aa_profile) %>% 
-    summarize(freq = n()) %>%
-    mutate(perc = round(freq/week_count_total*100, digits = 2)) %>% 
-    ungroup() 
-  
-  pos <- c()
-  for (i in df_mutations_grouped["aa_profile"]){
-    # get position of mutation
-    ind <- as.integer(str_sub(i, 2, -2))
-    pos <- c(pos, ind)
-  }
-  df_mutations_grouped$position <- pos
-  
-  df_mutations_sorted <- df_mutations_grouped %>%
-    arrange(-position)
-  
-  plot.data <- df_mutations_sorted %>% 
-    select(week, aa_profile, freq, perc)
-  
-  full_seq <- seq(min(plot.data$week), max(plot.data$week))
-  missing <- setdiff(full_seq, plot.data$week)
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], aa_profile = NA, freq = NA, perc = NA)
-      plot.data <- rbind(plot.data, new_row)
-    }
-  }
-  
-  aa_tick <- unique(plot.data$aa_profile)
-  week_tick <- unique(plot.data$week)
-  
-  heatmap <- plot_ly(
-    plot.data, x=~week, y=~aa_profile, z=~perc, 
-    reversescale=TRUE, 
-    xgap=1.5, ygap=1.5, 
-    type="heatmap", 
-    colorbar=list(
-      title=('<b>Proportion</b>')), 
-      hoverinfo='text', 
-      text=~paste0("<b>Week: </b>", .data$week, "<br><b>Substitution: </b>", .data$aa_profile, "<br><b>% of samples: </b>", .data$perc)
-    ) %>% 
-    layout(
-      plot_bgcolor="#F8F8F8", 
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(nticks=length(aa_tick), title="<b>Substitutions</b>", showgrid=FALSE, categoryorder="trace"),
-      legend=list(orientation='v', xanchor="right", yanchor="top")
-    ) 
-  
-  df_mutations_bar <- merge(metadata, df_names, by="Isolate_Name") %>%
-    select(Collection_Date, Mutations)
-  
-  bar.data <- df_mutations_bar %>%
-    select(Collection_Date) %>%
-    mutate(week = week(ymd(Collection_Date))) %>%
-    group_by(week) %>%
-    summarize(count = n())
-  
-  if (length(missing) != 0){
-    for (i in 1:length(missing)){
-      new_row <- list(week = missing[[i]], count = 0)
-      bar.data <- rbind(bar.data, new_row)
-    }
-  }
-  
-  bar.data <- bar.data %>% 
-    arrange(week)
-  
-  barplot <- plot_ly(
-    bar.data, x=~week, y=~count, 
-    type = "bar",
-    marker = list(color = "grey"),
-    hoverinfo='text',
-    hovertext=~paste0("<b>Week: </b>", .data$week, "<br><b># of samples: </b>", .data$count)
-  ) %>%
-    layout(
-      xaxis=list(nticks=length(week_tick), title='<b>Week (Collection Date)</b>', showgrid=FALSE),
-      yaxis=list(title="<b>Number of <br> sequences</b>", showgrid=FALSE)
-    )
-  
-  subplot(
-    heatmap, barplot, 
-    nrows = 2, heights = c(0.8, 0.2), 
-    shareX = TRUE, titleY = TRUE
-  )
+  yellow_heatmap <- make_heatmap(metadata, yellow_df_names)
+  yellow_heatmap
 }
 ```
 
@@ -1284,21 +834,9 @@ if (nrow(yellow_table) == 0){
 ## Group <span style="color: lightgrey;">GREY</span>
 
 ```{r grey data, echo=FALSE, message=FALSE, warning=FALSE}
-for (i in grey_table["ID"]) {
-  new <- str_remove_all(i, "%space%")
-  grey_table["ID"][grey_table["ID"] == i] <- new
-}
-
-names(grey_table)[2] <- "Mutations"
-names(grey_table)[3] <- "Deletions"
-names(grey_table)[4] <- "Insertions"
-
-grey_table_copy <- grey_table
-
-for (i in grey_table["Mutations"]){
-  new <- str_split(i, ",")
-  grey_table["Mutations"][grey_table["Mutations"] == i] <- new
-}
+result <- prepare_table(grey_table)
+grey_table <- result$table
+grey_table_copy <- result$table_copy
 
 cat(paste0('> ', 'Sequences in Group GREY: ', nrow(grey_table)))
 ```
@@ -1307,60 +845,8 @@ cat(paste0('> ', 'Sequences in Group GREY: ', nrow(grey_table)))
 if (nrow(grey_table) == 0){
   cat("No sequences in Group GREY")
 } else {
-  for (i in grey_table_copy["Mutations"]){
-    new <- gsub(",([[:alpha:]])", ", \\1", i)
-    grey_table_copy["Mutations"][grey_table_copy["Mutations"] == i] <- new
-  }
-  
-  subtype <- vector(mode = "character", length = length(grey_table_copy$ID))
-  seg <- vector(mode = "character", length = length(grey_table_copy$ID))
-  
-  moc <- vector(mode = "character", length = length(grey_table_copy$ID))
-  roi <- vector(mode = "character", length = length(grey_table_copy$ID))
-  pm <- vector(mode = "character", length = length(grey_table_copy$ID))
-    
-  grey_table_copy <- cbind(subtype, seg, grey_table_copy, moc, roi, pm)
-    
-  names(grey_table_copy)[1] <- "Subtype"
-  names(grey_table_copy)[2] <- "Segment"
-  
-  names(grey_table_copy)[4] <- "Substitutions"
-  
-  names(grey_table_copy)[7] <- "MOC"
-  names(grey_table_copy)[8] <- "ROI"
-  names(grey_table_copy)[9] <- "PM"
-  
-  for (j in 1:length(grey_table_copy$ID)){
-    grey_table_copy$Subtype[j] <- str_split_i(grey_table_copy$ID[j], "\\|", -1)
-    grey_table_copy$Segment[j] <- str_split_i(grey_table_copy$ID[j], "\\|", 2)
-  }
-  
-  for (k in 1:length(grey_table_copy$ID)){
-    temp <- subset(annot_table, ID == grey_table_copy$ID[k])
-    grey_table_copy$MOC[k] <- nrow(subset(temp, type=="MutationOfConcern")) 
-    grey_table_copy$ROI[k] <- nrow(subset(temp, type=="RegionOfInterest")) 
-    grey_table_copy$PM[k] <- nrow(subset(temp, type=="NotAnnotated")) 
-  }
-  
-  col_order <- c("Subtype", "Segment", "ID", "MOC", "ROI", "PM", "Substitutions", "Deletions", "Insertions")
-  grey_table_copy <- grey_table_copy[, col_order]
-  
-  datatable(
-    grey_table_copy, 
-    class = 'cell-border stripe', 
-    options = list(
-      dom = 'lftp', 
-      lengthMenu = c(5, 10, 20, 50),
-      pageLength = 5,
-      searchHighlight = TRUE,
-      autoWidth= TRUE,
-      columnDefs = list(list(width = 350, targets = c(3,7))),
-      initComplete = JS(
-      "function(settings, json) {",
-      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-      "}")
-    )
-  )
+  grey_result_table <- make_table(grey_table_copy)
+  grey_result_table
 }
 ```
 

@@ -1,15 +1,25 @@
 <div id="top"></div>
 
 <div align="center">
-<h1 align="center"> FluWarnSystem: Alert system and prioritization for concerning Influenza variants </h1>
+<h1 align="center"> VirusWarn-Flu </h1>
+<h3 align="center"> Mutation-Based Early Warning System to Prioritize Concerning Influenza Variants from Sequencing Data </h3>
 </div>
-The goal of VOCAL-Flu is to detect concerning Influenza variants from sequencing data.
+
+The goal of VirusWarn-Flu is to detect concerning Influenza variants from sequencing data.
 It does so by parsing Influenza genomes and detecting amino acids mutations in the spike proteins that can be associated with a phenotypic change. The phenotypic changes are annotated according to the knowledge accumulated on previous variants. 
-The tool is based on <a href="https://github.com/rki-mf1/vocal"><strong>VOCAL</strong></a>: Variant Of Concern ALert and prioritization, which was invented for SARS-CoV-2.
+The tool is based on <a href="https://github.com/rki-mf1/VirusWarn-SC2"><strong>VirusWarn-SC2</strong></a>, which was invented for SARS-CoV-2.
+
+
+# Documentation
+
+VirusWarn-Flu is part of *VirusWarn*
+
+<a href="https://rki-mf1.github.io/viruswarn-doc/"><strong>Explore »</strong></a>
+
 
 # Getting Started
 
-⚠️**Note**: 🔌 Right now, FluWarnSystem is tested on Linux and Mac system only 💻 
+⚠️ **Note**: 🔌 Right now, VirusWarn-Flu is tested on Linux and Mac system only 💻 
 
 ## Quick Installation
 
@@ -34,9 +44,9 @@ conda create -n nextflow -c bioconda nextflow
 conda activate nextflow
 ```
 
-The FluWarnSystem repository can be cloned from Git:
+The VirusWarn-Flu repository can be cloned from Git:
 ```bash
-git clone https://github.com/rki-mf1/FluWarnSystem.git
+git clone https://github.com/rki-mf1/VirusWarn-Flu.git
 ```
 
 ### Call help
@@ -45,7 +55,7 @@ git clone https://github.com/rki-mf1/FluWarnSystem.git
 nextflow run main.nf --help
 ```
 
-## Running FluWarnSystem
+## Running VirusWarn-Flu
 
 ```bash
 nextflow run main.nf \
@@ -54,7 +64,7 @@ nextflow run main.nf \
      --metadata 'test/metadata_h1n1.xlsx'
 ```
 
-### Running FluWarnSystem with splitting (Input from OpenFlu)
+### Running VirusWarn-Flu with splitting (Input from OpenFlu)
 
 ```bash
 nextflow run main.nf \
@@ -67,7 +77,7 @@ nextflow run main.nf \
 ## Parameter list
 
 ```
-fasta                    REQUIRED! The path to the fasta file with the sequences for FluWarnSystem.
+fasta                    REQUIRED! The path to the fasta file with the sequences for VirusWarn-Flu.
                          [ default: '' ]
 ref                      If you want to use the recent references from Nextclade, choose ''.
                          H1N1: A/Wisconsin/588/2019 (MW626065)
@@ -96,7 +106,7 @@ strict                   Run process with strict alert levels (without orange). 
                          [ default: 'n' ]
 season                   The Influenza season from which the input sequences are.
                          Important for checking on substitutions that are fixed in the population.
-                         [ default: '22/23' ]
+                         [ default: '23/24' ]
 ```
 
 
@@ -106,13 +116,16 @@ For further information on the tables that are used for the ranking, please take
 
 For further instructions for test runs and information on the used data, please take a look at the folder [`test`](test/) and the README that is provided there.
 
+An example of the HTML report can be found in the folder [`example`](example/).
+
 
 # How to interprete result.
 
-VOCAL output an alert level in four different colours which can be classified into 3 ratings.
+VirusWarn-Flu output an alert level in four different colours which can be classified into 3 ratings.
 
 | Alert color | Description |      Impact | 
 | ----------- | ----------- | ----------- |
+| Pink | Variants with fixed MOCs and ROIs from the previous season. | MODERATE |
 | Red | Variants with a high number of MOCs and ROIs that can be dangerous.     | HIGH |
 | Orange | Variants in the orange level have less MOC and ROI than the ones in the red level and are therefore considered less dangerous but still concerning.   | MODERATE |
 | Yellow | Variants that accumulate a high number of ROIs or PMs are sorted in the pink level for further inspection.   | MODERATE |
@@ -121,16 +134,16 @@ VOCAL output an alert level in four different colours which can be classified in
 
 # Contact
 
-Did you find a bug?🐛 Suggestion/Feedback/Feature request?👨‍💻
-Please visit [GitHub Issues](https://github.com/rki-mf1/FluWarnSystem/issues)
+Did you find a bug? 🐛 Suggestion/Feedback/Feature request? 👨‍💻
+Please visit [GitHub Issues](https://github.com/rki-mf1/VirusWarn-Flu/issues)
 
 For business inquiries or professional support requests 🍺
-Please contact Christina Kirschbaum (<KirschbaumC@rki.de>) or Dr. Hugues Richard (<RichardH@rki.de>)
+Please feel free to contact us!
 
 
 # Acknowledgments
 
-* Original tool: [VOCAL](https://github.com/rki-mf1/vocal): Variant Of Concern ALert and prioritization 
+* Original tool: [VirusWarn-SC2](https://github.com/rki-mf1/VirusWarn-SC2) (former VOCAL - Variant Of Concern ALert and prioritization)
 
     * Original Idea: SC2 Evolution Working group at the Robert Koch Institute in Berlin
 

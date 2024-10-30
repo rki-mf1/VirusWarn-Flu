@@ -1,6 +1,6 @@
 # Test Datasets
 
-In this folder, there are test datasets for FluWarnSystem which were downloaded from [OpenFlu](https://openflu.vital-it.ch).
+In this folder, there are test datasets for VirusWarn-Flu which were downloaded from [OpenFlu](https://openflu.vital-it.ch).
 
 The corresponding metadata files couldn't be downloaded due to an error, so alternative metadata files with only Isolate Name and Collection Date were prepared.
 

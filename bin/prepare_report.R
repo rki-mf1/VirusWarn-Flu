@@ -17,6 +17,16 @@ option_list <- list(
     help = "File corresponding to the variants",
   ),
   make_option(
+    c("-m", "--fixed_table"),
+    default = "",
+    help = "File containing the fixed mutations for each season",
+  ),
+  make_option(
+    c("--season"),
+    default = "23/24",
+    help = "Season of the fixed mutations to consider",
+  ),
+  make_option(
     c("-a", "--file_annotations"),
     default = "",
     help = "[OPTIONAL] File containing metadata on the samples",
@@ -40,7 +50,7 @@ option_list <- list(
   make_option(
     c("--strict"), 
     default = "n", 
-    help = "FluWarnSystem runs in strict mode",
+    help = "VirusWarn-Flu runs in strict mode",
   )
 )
 
@@ -70,259 +80,7 @@ if (args$verbose) {
   log_threshold(WARN)
 }
 
-# Setup variables
-file_variant_table = args$file_variant_table
-file_annotations = args$file_annotations
-
-VARIANT_TYPE_LEVELS = c(
-  #"PositiveSelection",
-  "MutationOfConcern", 
-  "RegionOfInterest",
-  "NotAnnotated" 
-)
-
-indel_max_size = 5 # larger indel will not be considered
-ID_COL = "ID"
-DATE_COL = "SAMPLING_DATE"
-GEOLOC_COL = "PRIMARY_DIAGNOSTIC_LAB_PLZ"
-MUT_TYPE_COL = "variant_type"
-VARIANT_CLASS_COL = "VariantType"
-
-var_pheno = read_tsv(file_variant_table) %>%
-  mutate(type = factor(type, levels = VARIANT_TYPE_LEVELS))
-
-var_pheno_wide_filter = var_pheno %>%
-  filter(variant_size <= indel_max_size) %>%
-  mutate(Test = 1L) %>%
-  pivot_wider(id_cols = ID:variant_size,
-              names_from = "type",
-              values_from = "Test",
-              values_fn = max,
-              values_fill = 0)
-
-score_mutation <- function(pheno_table){
-  if ((all(VARIANT_TYPE_LEVELS %in% colnames(pheno_table)))){
-    pheno_table_infomask = pheno_table %>%
-      mutate(infomask = str_c(
-        #PositiveSelection,
-        MutationOfConcern,
-        RegionOfInterest,
-        NotAnnotated, 
-        sep = ".")
-      )
-    
-    scores_combination = expand_grid(
-      #PositiveSelection = c(TRUE,FALSE),
-      MutationOfConcern = c(TRUE,FALSE),
-      RegionOfInterest = c(TRUE,FALSE),
-      NotAnnotated = c(TRUE,FALSE),
-    ) %>%
-    mutate(
-      s_pm = case_when(
-        NotAnnotated & !RegionOfInterest ~ 1,
-        NotAnnotated & !MutationOfConcern ~ 1,
-        !NotAnnotated & !MutationOfConcern & !RegionOfInterest ~ 1,
-        TRUE ~ 0
-      ),
-      s_moc = case_when(
-        !NotAnnotated & MutationOfConcern ~ 1,
-        NotAnnotated & MutationOfConcern ~ 1,
-        TRUE ~ 0
-      ),
-      s_roi = case_when(
-        !NotAnnotated & RegionOfInterest ~ 1,
-        NotAnnotated & RegionOfInterest ~ 1,
-        !NotAnnotated & !MutationOfConcern & RegionOfInterest ~ 1,
-        TRUE ~ 0
-      )
-    )
-  } else {
-    pheno_table_infomask = pheno_table %>%
-      mutate(infomask = str_c(
-        #PositiveSelection,
-        RegionOfInterest,
-        NotAnnotated, 
-        sep = ".")
-      )
-    
-    scores_combination = expand_grid(
-      #PositiveSelection = c(TRUE,FALSE),
-      RegionOfInterest = c(TRUE,FALSE),
-      NotAnnotated = c(TRUE,FALSE)
-    ) %>%
-    mutate(
-      s_pm = case_when(
-        NotAnnotated & !RegionOfInterest ~ 1,
-        !NotAnnotated & !RegionOfInterest ~ 1,
-        TRUE ~ 0
-      ),
-      s_moc = case_when(
-        TRUE ~ 0
-      ),
-      s_roi = case_when(
-        NotAnnotated & RegionOfInterest ~ 1,
-        !NotAnnotated & RegionOfInterest ~ 1,
-        TRUE ~ 0
-      )
-    )
-  }
-  
-  pheno_table_with_score = suppressMessages(inner_join(pheno_table_infomask, scores_combination))
-  
-  return(pheno_table_with_score)
-}
-
-var_pheno_wide_filter_with_score = score_mutation(var_pheno_wide_filter)
-
-var_pheno_score_summary = suppressMessages(
-  var_pheno_wide_filter_with_score %>%
-  group_by(across(any_of(
-   c(
-     ID_COL,
-     DATE_COL,
-     GEOLOC_COL,
-     MUT_TYPE_COL,
-     VARIANT_CLASS_COL
-   )
-  ))) %>%
-  summarise(
-   ListMutationsSelected = str_c(aa_pattern[s_roi > 0 | s_moc > 0 | s_pm > 0],
-                                 collapse = ","),
-   nMutationsTotal = n(),
-   across(starts_with("s_"), sum),
-  ) %>%
-  ungroup()
-)
-
-if (args$strict == "y"){
-  alert_colors = c(
-    "red" = "#FF2400",      # alert 
-    "yellow" = "#FFEA00",        # accumulation alert
-    "grey" = "slategrey"   # no alert
-  )
-} else {
-  alert_colors = c(
-    "red" = "#FF2400",      # alert 
-    "orange" = "orange",    # weak alert
-    "yellow" = "#FFEA00",        # accumulation alert
-    "grey" = "slategrey"   # no alert
-  )
-}
-alert_level = factor(names(alert_colors), ordered = TRUE)
-
-var_pheno_summary_wide = var_pheno_score_summary %>%
-  pivot_wider(
-    names_from = all_of(MUT_TYPE_COL),
-    values_from = c(
-      "ListMutationsSelected",
-      "nMutationsTotal",
-      "s_moc",
-      "s_roi",
-      "s_pm"
-    ),
-    values_fill = list(
-      ListMutationsSelected = "",
-      nMutationsTotal = 0 ,
-      s_moc = 0 ,
-      s_roi = 0,
-      s_pm = 0
-    )
-  )
-
-## This fonction returns the alert levels
-## Version 1 with hard set thresholds
-compute_alert_levels_v1 <- function(pheno_table_wide){
-  ## WARNING: all variable names are hard coded in this function
-  
-  if(! "ListMutationsSelected_M" %in% colnames(pheno_table_wide)){pheno_table_wide$ListMutationsSelected_M = 0}
-  if(! "ListMutationsSelected_D" %in% colnames(pheno_table_wide)){pheno_table_wide$ListMutationsSelected_D = 0}
-  if(! "ListMutationsSelected_I" %in% colnames(pheno_table_wide)){pheno_table_wide$ListMutationsSelected_I = 0}
-  
-  if(! "nMutationsTotal_M" %in% colnames(pheno_table_wide)){pheno_table_wide$nMutationsTotal_M = 0}
-  if(! "nMutationsTotal_D" %in% colnames(pheno_table_wide)){pheno_table_wide$nMutationsTotal_D = 0}
-  if(! "nMutationsTotal_I" %in% colnames(pheno_table_wide)){pheno_table_wide$nMutationsTotal_I = 0}
-  
-  if(! "s_roi_M" %in% colnames(pheno_table_wide)){pheno_table_wide$s_roi_M = 0}
-  if(! "s_roi_D" %in% colnames(pheno_table_wide)){pheno_table_wide$s_roi_D = 0}
-  if(! "s_roi_I" %in% colnames(pheno_table_wide)){pheno_table_wide$s_roi_I = 0}
-  
-  if(! "s_pm_M" %in% colnames(pheno_table_wide)){pheno_table_wide$s_pm_M = 0}
-  if(! "s_pm_D" %in% colnames(pheno_table_wide)){pheno_table_wide$s_pm_D = 0}
-  if(! "s_pm_I" %in% colnames(pheno_table_wide)){pheno_table_wide$s_pm_I = 0}
-  
-  if(! "s_moc_M" %in% colnames(pheno_table_wide)){pheno_table_wide$s_moc_M = 0}
-  if(! "s_moc_D" %in% colnames(pheno_table_wide)){pheno_table_wide$s_moc_D = 0}
-  if(! "s_moc_I" %in% colnames(pheno_table_wide)){pheno_table_wide$s_moc_I = 0}
-  
-  if (args$strict == "y") {
-    pheno_table_wide_with_alert = pheno_table_wide %>%
-      mutate(
-        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
-        alert_level =
-          case_when(
-            (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
-                (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
-            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-               ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
-               ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
-            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-               ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-               ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
-            TRUE ~ "grey"
-          ))
-  } else {
-    pheno_table_wide_with_alert = pheno_table_wide %>%
-      mutate(
-        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I),
-        alert_level =
-         case_when(
-           (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
-               (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 5)) ~ "red", # alert
-           (((s_moc_M + s_moc_D + s_moc_I) >= 1 & 
-               (s_moc_M + s_moc_D + s_moc_I + s_roi_M + s_roi_D + s_roi_I) >= 3)) ~ "orange", # weak alert
-           (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-              ((s_roi_M + s_roi_D + s_roi_I) >= 8) & 
-              ((s_pm_M + s_pm_D + s_pm_I) < 25)) ~ "yellow", # accumulation alert roi
-           (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
-              ((s_pm_M + s_pm_D + s_pm_I) >= 25) & 
-              ((s_roi_M + s_roi_D + s_roi_I) < 8)) ~ "yellow", # accumulation alert pm
-           TRUE ~ "grey"
-         ))
-  }
-  return(pheno_table_wide_with_alert)
-}
-
-var_pheno_summary_wide_with_alert = compute_alert_levels_v1(var_pheno_summary_wide)
-prediction_overview = var_pheno_summary_wide_with_alert %>% group_by(alert_level) %>% count()
-
-# Write output with prediction overview
-write.table(
-  prediction_overview,
-  file = file.path("prediction_overview.txt"),
-  sep = "\t",
-)
-
-mutations_per_alert_level = suppressMessages(
-  var_pheno_summary_wide_with_alert  %>%
-  ungroup() %>%
-  filter(alert_level != "grey") %>%
-  select(ID, alert_level) %>%
-  distinct() %>% ## WARNING THIS IS A HOTFIX
-  inner_join(var_pheno_wide_filter %>% ungroup() %>% select(ID, aa_pattern)) %>%
-  mutate(value = 1L) %>%
-  group_by(alert_level) %>%
-  nest() %>%
-  mutate(data = map(
-   data,
-   ~ pivot_wider(
-     .,
-     names_from = aa_pattern,
-     values_from = value,
-     values_fill = 0
-   )
-  ))
-)
-
+# ----- Functions ----- #
 hamming <- function(X) {
   D <- (1 - X) %*% t(X)
   D + t(D)
@@ -344,6 +102,186 @@ get_sequence_clusters = function(tab, max_dist = 1) {
   )
 }
 
+compute_alert_levels_v1 <- function(pheno_table_wide){
+  if (args$strict == "y") {
+    pheno_table_wide_with_alert = pheno_table_wide %>%
+      mutate(
+        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I + s_moc_F + s_roi_F),
+        alert_level =
+          case_when(
+            (((s_moc_F >= 1 | s_roi_F >= 1) &
+              (s_moc_M + s_moc_D + s_moc_I + s_moc_F) >= 1 & s_moc_roi_tot >= 3)) ~ "pink", # known variant
+            (((s_moc_M + s_moc_D + s_moc_I) >= 1 & s_moc_roi_tot >= 5)) ~ "red", # alert
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_roi_M + s_roi_D + s_roi_I + s_roi_F) >= 8) & 
+              ((s_pm_M + s_pm_D + s_pm_I + s_pm_F) < 25)) ~ "yellow", # accumulation alert roi
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_pm_M + s_pm_D + s_pm_I + s_pm_F) >= 25) & 
+              ((s_roi_M + s_roi_D + s_roi_I + s_roi_F) < 8)) ~ "yellow", # accumulation alert pm
+            TRUE ~ "grey"
+          ))
+  } else {
+    pheno_table_wide_with_alert = pheno_table_wide %>%
+      mutate(
+        s_moc_roi_tot = (s_moc_M + s_moc_D + s_roi_M + s_roi_D + s_moc_I + s_roi_I + s_moc_F + s_roi_F),
+        alert_level =
+          case_when(
+            (((s_moc_F >= 1 | s_roi_F >= 1) &
+              (s_moc_M + s_moc_D + s_moc_I + s_moc_F) >= 1 & s_moc_roi_tot >= 3)) ~ "pink", # known variant
+            (((s_moc_M + s_moc_D + s_moc_I) >= 1 & s_moc_roi_tot >= 5)) ~ "red", # alert
+            (((s_moc_M + s_moc_D + s_moc_I) >= 1 & s_moc_roi_tot >= 3)) ~ "orange", # weak alert
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_roi_M + s_roi_D + s_roi_I + s_roi_F) >= 8) & 
+              ((s_pm_M + s_pm_D + s_pm_I + s_pm_F) < 25)) ~ "yellow", # accumulation alert roi
+            (((s_moc_M + s_moc_D + s_moc_I) == 0) & 
+              ((s_pm_M + s_pm_D + s_pm_I + s_pm_F) >= 25) & 
+              ((s_roi_M + s_roi_D + s_roi_I + s_roi_F) < 8)) ~ "yellow", # accumulation alert pm
+            TRUE ~ "grey"
+          ))
+  }
+  return(pheno_table_wide_with_alert)
+}
+
+# Setup variables
+file_variant_table = args$file_variant_table
+fixed_table = args$fixed_table
+season = args$season
+file_annotations = args$file_annotations
+
+VARIANT_TYPE_LEVELS = c(
+  #"PositiveSelection",
+  "MutationOfConcern", 
+  "RegionOfInterest",
+  "NotAnnotated" 
+)
+
+indel_max_size = 5 # larger indel will not be considered
+ID_COL = "ID"
+DATE_COL = "SAMPLING_DATE"
+MUT_TYPE_COL = "variant_type"
+VARIANT_CLASS_COL = "VariantType"
+
+var_pheno = read_tsv(file_variant_table, show_col_types = FALSE) %>%
+  group_by(ID, aa_pattern) %>%
+  filter(
+    (n() == 1) |
+      (type == "MutationOfConcern" & n() > 1) |
+      (type == "RegionOfInterest" & n() > 1 & !any(type == "MutationOfConcern"))
+  ) %>%
+  ungroup() %>%
+  mutate(type = factor(type, levels = VARIANT_TYPE_LEVELS))
+
+fixed = read_csv(fixed_table, show_col_types = FALSE) %>%
+  filter(Season == season) %>%
+  select(-...1)
+
+var_pheno_fixed = var_pheno %>%
+  mutate(
+    type = ifelse(aa_pos_ref_start %in% fixed$Position, paste("Fixed", type, sep = ""), as.character(type)),
+    variant_type = ifelse(aa_pos_ref_start %in% fixed$Position, "F", as.character(variant_type))
+  ) 
+
+var_pheno_final = var_pheno_fixed %>% 
+  group_by(ID) %>%
+  summarise(
+    ListMutationsSelected = paste(aa_pattern, collapse = ","),
+    ListMutationsSelected_M = paste(aa_pattern[variant_type == "M"], collapse = ","),
+    ListMutationsSelected_D = paste(aa_pattern[variant_type == "D"], collapse = ","),
+    ListMutationsSelected_I = paste(aa_pattern[variant_type == "I"], collapse = ","),
+    ListMutationsSelected_F = paste(aa_pattern[variant_type == "F"], collapse = ","),
+    nMutationsTotal = n(),
+    nMutationsTotal_M = sum(variant_type == "M"),
+    nMutationsTotal_D = sum(variant_type == "D"),
+    nMutationsTotal_I = sum(variant_type == "I"),
+    nMutationsTotal_F = sum(variant_type == "F"),
+    s_moc_M = sum(type == "MutationOfConcern" & variant_type == "M"),
+    s_moc_D = sum(type == "MutationOfConcern"  & variant_type == "D"),
+    s_moc_I = sum(type == "MutationOfConcern" & variant_type == "I"),
+    s_moc_F = sum(type == "FixedMutationOfConcern"),
+    s_roi_M = sum(type == "RegionOfInterest" & variant_type == "M"),
+    s_roi_D = sum(type == "RegionOfInterest" & variant_type == "D"),
+    s_roi_I = sum(type == "RegionOfInterest" & variant_type == "I"),
+    s_roi_F = sum(type == "FixedRegionOfInterest"),
+    s_pm_M = sum(type == "NotAnnotated" & variant_type == "M"),
+    s_pm_D = sum(type == "NotAnnotated" & variant_type == "D"),
+    s_pm_I = sum(type == "NotAnnotated" & variant_type == "I"),
+    s_pm_F = sum(type == "FixedNotAnnotated"),
+    .groups = 'drop'
+  )
+
+if (args$strict == "y"){
+  alert_colors = c(
+    "pink" = "deeppink",    # known variant
+    "red" = "#FF2400",      # alert 
+    "yellow" = "#FFEA00",   # accumulation alert
+    "grey" = "slategrey"    # no alert
+  )
+} else {
+  alert_colors = c(
+    "pink" = "deeppink",    # known variant
+    "red" = "#FF2400",      # alert 
+    "orange" = "orange",    # weak alert
+    "yellow" = "#FFEA00",   # accumulation alert
+    "grey" = "slategrey"    # no alert
+  )
+}
+alert_level <- factor(names(alert_colors), ordered = TRUE)
+
+var_pheno_final_with_alert <- compute_alert_levels_v1(var_pheno_final)
+prediction_overview <- var_pheno_final_with_alert %>% group_by(alert_level) %>% count()
+
+# Write output with prediction overview
+write.table(
+  prediction_overview,
+  file = file.path("prediction_overview.txt"),
+  sep = "\t",
+)
+
+filtered_df <- var_pheno_final_with_alert %>%
+  filter(alert_level != "grey")
+unique_colors <- unique(filtered_df$alert_level)
+
+if (length(unique_colors) != 1) {
+  mutations_per_alert_level <- suppressMessages(
+    var_pheno_final_with_alert  %>%
+    ungroup() %>%
+    filter(alert_level != "grey") %>%
+    select(ID, alert_level) %>%
+    distinct() %>% ## WARNING THIS IS A HOTFIX
+    inner_join(var_pheno_fixed %>% ungroup() %>% select(ID, aa_pattern)) %>%
+    mutate(value = 1L) %>%
+    group_by(alert_level) %>%
+    nest()) %>% 
+    mutate(data = map(data, ~ {
+      pivot_wider(
+        .x,
+        names_from = aa_pattern,
+        values_from = value,
+        values_fill = list(value = 0)
+      )
+    }))
+} else {
+  mutations_per_alert_level <- suppressMessages(
+    var_pheno_final_with_alert  %>%
+    ungroup() %>%
+    filter(alert_level != "grey") %>%
+    select(ID, alert_level) %>%
+    distinct() %>% ## WARNING THIS IS A HOTFIX
+    inner_join(var_pheno_fixed %>% ungroup() %>% select(ID, aa_pattern)) %>%
+    mutate(value = 1L) %>%
+    group_by(alert_level) %>%
+    nest())
+    
+  mutations_per_alert_level[[2]][[1]] <- mutations_per_alert_level[[2]][[1]] %>%
+    group_by(ID, aa_pattern) %>%
+    summarize(value = sum(value, na.rm = TRUE), .groups = 'drop') %>%
+    pivot_wider(
+      names_from = aa_pattern,
+      values_from = value,
+      values_fill = list(value = 0)
+    )
+}
+
 alert_level_groups_with_clusters = mutations_per_alert_level %>%
   mutate(clusters = map(data, get_sequence_clusters))
 
@@ -361,7 +299,7 @@ if(nrow(alert_level_groups_with_clusters) != 0){
 }
 
 samples_with_alert = suppressMessages(
-  var_pheno_summary_wide_with_alert %>%
+  var_pheno_final_with_alert %>%
   left_join(alerts_with_clusters_ID) %>%
   arrange(desc(alert_level),
           desc(s_moc_roi_tot),
@@ -374,7 +312,7 @@ log_info("*** Writing Results ***")
 common_mutations_in_clusters = suppressMessages(
   samples_with_alert %>%
   filter(alert_level != "grey") %>%
-  inner_join(var_pheno_wide_filter) %>%
+  inner_join(var_pheno_fixed) %>%
   group_by(alert_level, cluster_ID_in_alert_level) %>%
   summarise(
     FreqMutThr = round( length( ID %>% unique() ) * 0.3, d = 0 ) + 1,
@@ -382,7 +320,7 @@ common_mutations_in_clusters = suppressMessages(
   ) %>%
   summarise(
     ListFrequentMutations_gt30perc = str_c(aa_pattern_common %>%
-                                           unique())
+                                            unique())
   ) %>%
   ungroup() %>% 
     arrange(desc(alert_level), cluster_ID_in_alert_level),
@@ -426,9 +364,9 @@ samples_out = suppressMessages(
     relocate(
       alert_level,
       s_moc_roi_tot,
-      s_moc_M, s_moc_D, s_moc_I,
-      s_roi_M,	s_roi_D,	s_roi_I,
-      s_pm_M, s_pm_D, s_pm_I,
+      s_moc_M, s_moc_D, s_moc_I, s_moc_F,
+      s_roi_M,	s_roi_D,	s_roi_I, s_roi_F,
+      s_pm_M, s_pm_D, s_pm_I, s_pm_F,
       starts_with("ListMutationsSelected"),
       any_of("LINEAGE.LATEST"),
       cluster_size,

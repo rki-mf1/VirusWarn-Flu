@@ -1,6 +1,6 @@
 # Example Report
 
-This folder includes am example report generated from data downloaded from GISAID with the following filters on 2024-07-02:
+This folder includes am example report generated from data downloaded from GISAID with the following filters on 2024-10-16:
 
 | Filter                  | Value           |
 |:------------------------|----------------:|
@@ -8,8 +8,8 @@ This folder includes am example report generated from data downloaded from GISAI
 | **H**                   | 1               |
 | **N**                   | 1               |
 | **Location**            | Europe Germany  |
-| **Collection Date From**| 2023-01-01      |
-| **Collection Date To**  | 2023-12-31      |
+| **Collection Date From**| 2023-10-01      |
+| **Collection Date To**  | 2024-05-31      |
 | **Required segments**   | HA              |
 | **only complete**       | Yes             |
 

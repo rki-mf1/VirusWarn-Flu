@@ -5,7 +5,7 @@ process REPORT {
 
     input:
         path variant_table
-        path variants_phenotypes_filtered
+        path variants_phenotypes
         path rmd
         path input_fasta
         path moc_table
@@ -26,9 +26,11 @@ process REPORT {
     echo "Preparing csv for report..."
 
     prepare_report.R \
-        -f ${variants_phenotypes_filtered} \
+        -f ${variants_phenotypes} \
         -s "fluwarnsystem-alerts-samples-all.csv" \
         -c "fluwarnsystem-alerts-clusters-summaries-all.csv" \
+        -m "${fixed_table}" \
+        --season ${params.season} \
         --strict ${params.strict}
 
     echo "Knitting HTML report..."
@@ -40,7 +42,7 @@ process REPORT {
             fasta = \'${input_fasta}\', \\
             metadata = \'${metadata}\', \\
             variant_table = \'${variant_table}\', \\
-            annot_table = \'${variants_phenotypes_filtered}\', \\
+            annot_table = \'${variants_phenotypes}\', \\
             alert_samples = \'fluwarnsystem-alerts-samples-all.csv\', \\
             subtype = \'${params.subtype}\', \\
             ref = \'${params.ref}\', \\
