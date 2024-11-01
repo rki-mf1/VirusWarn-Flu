@@ -723,7 +723,7 @@ if (params$strict == 'y'){
 } else if (nrow(orange_table) == 0){
   cat("No sequences in Group ORANGE")
 } else {
-  orange_lollipop <- make_lollipop(pink_table, "orange")
+  orange_lollipop <- make_lollipop(orange_table, "orange")
   orange_lollipop
 }
 ```
