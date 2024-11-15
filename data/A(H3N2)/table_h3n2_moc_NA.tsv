@@ -1,0 +1,5 @@
+gene	amino acid	type	ID	comment	source
+NA	E119V 	MutationOfConcern	NA	Oseltamivir resistant, Synergetic effects on NA inhibitors with I222V	doi:10.1016/j.antiviral.2022.105280, doi:10.1016/j.coi.2011.07.016, doi:10.1016/j.antiviral.2020.104970
+NA	I222V	MutationOfConcern	NA	Synergetic effects on NA inhibitors with E119V	doi:10.1016/j.antiviral.2022.105280
+NA	R292K	MutationOfConcern	NA	Oseltamivir resistant	doi:10.1016/j.coi.2011.07.016, doi:10.1016/j.antiviral.2020.104970
+NA	N294S	MutationOfConcern	NA	Oseltamivir resistant	doi:10.1016/j.coi.2011.07.016

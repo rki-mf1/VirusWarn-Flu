@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# local folders
+work/
+result/
+results/
+
+# conda
+conda/
+.conda/
+
+# nextflow
+.nextflow/
+.nextflow.log*
+
+# Mac
+.DS_Store

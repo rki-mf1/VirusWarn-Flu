@@ -1,0 +1,9 @@
+gene	amino acid	type	ID	comment	source
+NA	G104E	MutationOfConcern	NA	Resistance to NA inhibitors	doi:10.1016/j.antiviral.2022.105280
+NA	E105K 	MutationOfConcern	NA	Resistance to NA inhibitors	doi:10.1016/j.antiviral.2022.105280
+NA	G140R	MutationOfConcern	NA	Resistance to NA inhibitors	doi:10.1016/j.antiviral.2022.105280
+NA	T146K	MutationOfConcern	NA	Resistance to NA inhibitors	doi:10.1016/j.antiviral.2022.105280
+NA	T146P	MutationOfConcern	NA	Resistance to NA inhibitors	doi:10.1016/j.antiviral.2022.105280
+NA	N169S	MutationOfConcern	NA	Synergetic effects on NA inhibitors with T146K	doi:10.1016/j.antiviral.2022.105280
+NA	A200T	MutationOfConcern	NA	Peramivir resistant	doi:10.1016/j.antiviral.2020.104970
+NA	A245T	MutationOfConcern	NA	Zanamivir restistant	doi:10.1016/j.antiviral.2020.104970

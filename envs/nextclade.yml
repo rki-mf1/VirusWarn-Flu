@@ -1,0 +1,9 @@
+name: nextclade
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - nextclade=3.0.1
+  - python=3.9.7
+  - pandas=1.5.3

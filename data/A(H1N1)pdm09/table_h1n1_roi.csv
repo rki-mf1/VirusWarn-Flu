@@ -1,0 +1,30 @@
+﻿name,nt_start,nt_end,aa_start,aa_end,type,func,source
+HA,370,375,124,125,RegionOfInterest,Antigenic site Sa,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,457,471,153,157,RegionOfInterest,Antigenic site Sa,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,475,492,159,164,RegionOfInterest,Antigenic site Sa,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,550,585,184,195,RegionOfInterest,Antigenic site Sb,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,496,510,166,170,RegionOfInterest,Antigenic site Ca1,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,607,615,203,205,RegionOfInterest,Antigenic site Ca1,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,703,711,235,237,RegionOfInterest,Antigenic site Ca1,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,409,426,137,142,RegionOfInterest,Antigenic site Ca2,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,661,666,221,222,RegionOfInterest,Antigenic site Ca2,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,208,225,70,75,RegionOfInterest,Antigenic site Cb,doi:10.1371/journal.pone.0008553 doi:10.1172/JCI122895
+HA,271,273,91,91,RegionOfInterest,Receptor Binding site Base of Pocket,doi:10.1371/currents.RRN1152 doi:10.1002/jmv.23205
+HA,292,294,98,98,RegionOfInterest,Receptor Binding site Base of Pocket,doi:10.1371/currents.RRN1152 doi:10.1002/jmv.23205
+HA,448,450,150,150,RegionOfInterest,Receptor Binding site Base of Pocket,doi:10.1371/currents.RRN1152 doi:10.1002/jmv.23205
+HA,538,540,180,180,RegionOfInterest,Receptor Binding site Base of Pocket,doi:10.1371/currents.RRN1152 doi:10.1002/jmv.23205
+HA,574,576,192,192,RegionOfInterest,Receptor Binding site Base of Pocket,doi:10.1371/currents.RRN1152 doi:10.1002/jmv.23205
+HA,559,585,187,195,RegionOfInterest,Receptor Binding site 190-helix,doi:10.2183/pjab.88.226
+HA,652,675,218,225,RegionOfInterest,Receptor Binding site 220-loop,doi:10.2183/pjab.88.226
+HA,394,405,132,135,RegionOfInterest,Receptor Binding site 130-loop,doi:10.2183/pjab.88.226
+HA,31,33,11,11,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
+HA,211,213,71,71,RegionOfInterest,Glycosylation site,doi:10.1007/s00705-014-2179-z
+HA,310,312,104,104,RegionOfInterest,Glycosylation site,doi:10.1007/s00705-014-2179-z
+HA,424,426,142,142,RegionOfInterest,Glycosylation site,doi:10.1007/s00705-014-2179-z
+HA,430,432,144,144,RegionOfInterest,Glycosylation site (variant),doi:10.1007/s00705-014-2179-z
+HA,463,465,155,155,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
+HA,469,471,157,157,RegionOfInterest,Glycosylation site,doi:10.1371/journal.pone.0112302
+HA,529,531,177,177,RegionOfInterest,Glycosylation site,doi:10.1007/s00705-014-2179-z
+HA,514,516,172,172,RegionOfInterest,Glycosylation site (variant),doi:10.1007/s00705-014-2179-z
+HA,535,537,179,179,RegionOfInterest,Glycosylation site (variant),doi:10.1007/s00705-014-2179-z
+HA,856,858,286,286,RegionOfInterest,Glycosylation site,doi:10.1007/s00705-014-2179-z

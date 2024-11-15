@@ -1,0 +1,8 @@
+name,nt_start,nt_end,aa_start,aa_end,type,func,source
+HA,346,411,116,137,RegionOfInterest,Antigenic site 120-loop,doi:10.1128/JVI.02477-07
+HA,421,450,141,150,RegionOfInterest,Antigenic site 150-loop,doi:10.1128/JVI.02477-07
+HA,484,510,162,170,RegionOfInterest,Antigenic site 160-loop,doi:10.1128/JVI.02477-07
+HA,589,615,197,205,RegionOfInterest,Antigenic site 190-helix,doi:10.1128/JVI.02477-07
+HA,406,429,136,143,RegionOfInterest,Receptor Binding site 140-loop,doi:10.1073/pnas.0708363104
+HA,586,615,196,205,RegionOfInterest,Receptor Binding site 190-helix,doi:10.1073/pnas.0708363104
+HA,718,735,240,245,RegionOfInterest,Receptor Binding site 240-loop,doi:10.1073/pnas.0708363104

@@ -1,0 +1,222 @@
+---
+title: "QC Report FluWarnSystem `r Sys.Date()`"
+author: "FluWarnSystem"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+params:
+  fasta: ""
+  qc_table: "qc_table.tsv"
+  subtype: ""
+---
+
+<style>
+  body .main-container {
+      max-width: 1600px;
+  }
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(include = TRUE)
+```
+
+```{r import, include=FALSE}
+library(dplyr)
+
+library(plotly)
+
+library(DT)
+```
+
+```{r data, include=FALSE}
+qc <- read.delim(params$qc_table)
+qc <- qc %>% select(-X)
+
+seq <- qc[is.na(qc$errors),]
+row.names(seq) <- NULL
+
+skipped <- qc[!is.na(qc$errors),]
+row.names(skipped) <- NULL
+```
+
+
+
+## Overview
+
+The report was generated for the following input fasta file:
+
+```{r input, echo=FALSE, message=FALSE, warning=FALSE}
+cat(paste0('> ', params$fasta))
+```
+
+The sequences are from the subtype:
+
+```{r subtype, echo=FALSE, message=FALSE, warning=FALSE}
+if (params$subtype == "h1n1"){
+  cat('> Influenza A H1N1pdm')
+} else if (params$subtype == "h3n2"){
+  cat('> Influenza A H3N2')
+} else if (params$subtype == "vic"){
+  cat('> Influenza B Victoria')
+}
+```
+
+**Sequences that are not aligned were skipped because they were thrown out by Nextclade due to errors.**
+For more information, please check the table in the section [Skipped Sequences](#item-two).
+
+```{r pie chart, echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+labels <- c('Sequences processed', 'Sequences skipped')
+values <- c(nrow(seq), nrow(skipped))
+
+plot_ly(labels = labels, values = values, type = "pie", marker = list(colors = c("darkgreen", "darkred"))) %>%
+  layout(showlegend = TRUE)
+```
+
+
+
+## Processed Sequences {.tabset .tabset-fade}
+
+### Table
+
+```{r seq table, echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {
+  seq_tab <- seq %>%
+    select(ID, qc.overallStatus, alignmentScore, coverage, failedCdses, warnings)
+  
+  names(seq_tab)[2] <- "QC Status"
+  
+  names(seq_tab)[3] <- "Alignment Score"
+  names(seq_tab)[4] <- "Coverage"
+  seq_tab$Coverage <- round(seq_tab$Coverage, 2)
+  
+  names(seq_tab)[5] <- "Failed"
+  names(seq_tab)[6] <- "Warnings"
+  
+  datatable(
+    seq_tab, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'lftp', 
+      lengthMenu = c(5, 10, 20, 50),
+      pageLength = 10,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
+  )
+}
+```
+
+### QC Status
+
+```{r qc status, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {  
+  bar.data <- seq %>%
+    group_by(qc.overallStatus) %>%
+    summarize(count = n())
+  
+  status_tick <- unique(seq$qc.overallStatus)
+  
+  plot_ly(
+      bar.data, x=~qc.overallStatus, y=~count, 
+      type = "bar",
+      marker = list(color = "lightblue"),
+      hoverinfo='text',
+      hovertext=~paste0("<b>Status: </b>", .data$qc.overallStatus, "<br><b># of Sequences: </b>", .data$count)
+    ) %>%
+      layout(
+        xaxis=list(nticks=length(status_tick), title='<b>QC Status</b>', showgrid=FALSE),
+        yaxis=list(title="<b>Number of Sequences</b>", showgrid=FALSE)
+      )
+}
+```
+
+### Alignment score
+
+```{r alignment, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {
+  align.data <- seq %>%
+    group_by(alignmentScore) %>%
+    summarize(count = n())
+  
+  plot_ly(
+    align.data, x = ~alignmentScore, y = ~count,
+    type = "bar",
+    marker = list(color = "blue"),
+    hoverinfo='text',
+    hovertext=~paste0("<b>Alignment Score: </b>", .data$alignmentScore, "<br><b># of Sequences: </b>", .data$count)
+  ) %>%
+    layout(
+      xaxis = list(title = "Alignment Score"),
+      yaxis = list(title = "Number of Sequences")
+    )
+}
+```
+
+### Coverage
+
+```{r coverage, out.width="1000px", echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(seq) == 0){
+  cat("All sequences were skipped")
+} else {  
+  cov.data <- seq_tab %>%
+    group_by(Coverage) %>%
+    summarize(count = n())
+  
+  plot_ly(
+    cov.data, x = ~Coverage, y = ~count,
+    type = "bar",
+    marker = list(color = "blue"),
+    hoverinfo='text',
+    hovertext=~paste0("<b>Coverage: </b>", .data$Coverage, "<br><b># of Sequences: </b>", .data$count)
+  ) %>%
+    layout(
+      yaxis = list(title = "Number of Sequences")
+    )
+}
+```
+
+
+
+## Skipped Sequences 
+
+```{r skipped seq table, echo=FALSE, message=FALSE, warning=FALSE}
+if (nrow(skipped) == 0){
+  cat("No sequences were skipped")
+} else {
+  skipped_tab <- skipped %>%
+    select(ID, errors)
+  
+  names(skipped_tab)[2] <- "Error"
+  
+  datatable(
+    skipped_tab, 
+    class = 'cell-border stripe', 
+    options = list(
+      dom = 'lftp', 
+      lengthMenu = c(5, 10, 20, 50),
+      pageLength = 10,
+      searchHighlight = TRUE,
+      autoWidth= TRUE,
+      initComplete = JS(
+      "function(settings, json) {",
+      "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+      "}")
+    )
+  )
+}
+```
