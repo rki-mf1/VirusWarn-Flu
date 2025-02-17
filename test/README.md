@@ -11,7 +11,7 @@ With the following commands and data set, the mode subtype can be tested for Inf
 ### Running test set
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_h1n1.fasta'
 ```
@@ -19,7 +19,7 @@ nextflow run main.nf \
 ### Running test set with metadata
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_h1n1.fasta' \
      --metadata 'test/metadata_h1n1.xlsx'
@@ -46,7 +46,7 @@ With the following commands and data set, the mode subtype can be tested for Inf
 ### Running test set
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_h3n2.fasta' \
      --subtype 'h3n2'
@@ -55,7 +55,7 @@ nextflow run main.nf \
 ### Running test set with metadata
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_h3n2.fasta' \
      --metadata 'test/metadata_h3n2.xlsx' \
@@ -83,7 +83,7 @@ With the following commands and data set, the mode subtype can be tested for Inf
 ### Running test set
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_vic.fasta' \
      --subtype 'vic'
@@ -92,7 +92,7 @@ nextflow run main.nf \
 ### Running test set with metadata
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_vic.fasta' \
      --metadata 'test/metadata_vic.xlsx' \
@@ -119,7 +119,7 @@ With the following commands and data set, the mode split can be tested for OpenF
 ### Running test set
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_combi.fasta' \
      --split 'OpenFlu'
@@ -128,7 +128,7 @@ nextflow run main.nf \
 ### Running test set with metadata
 
 ```bash
-nextflow run main.nf \
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile conda,local \
      --fasta 'test/openflu_combi.fasta' \
      --metadata 'test/metadata_combi.xlsx' \
