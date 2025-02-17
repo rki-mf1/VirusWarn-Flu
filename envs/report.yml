@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
   - r
-  - defaults
 dependencies:
   - r-base=4.3.2
   - r-optparse=1.7.3
