@@ -12,6 +12,9 @@ results/
 conda/
 .conda/
 
+# Singularity
+singularity/
+
 # nextflow
 .nextflow/
 .nextflow.log*

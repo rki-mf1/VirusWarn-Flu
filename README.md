@@ -8,6 +8,7 @@
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A522.10.1-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](https://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 
 The goal of VirusWarn-Flu is to detect concerning Influenza variants from sequencing data.
 It does so by parsing Influenza genomes and detecting amino acids mutations in the spike proteins that can be associated with a phenotypic change. The phenotypic changes are annotated according to the knowledge accumulated on previous variants. 
@@ -27,7 +28,7 @@ VirusWarn-Flu is part of *VirusWarn*
 
 ## Quick Installation
 
-To run the pipeline, you need to have `Nextflow` and either `conda` or `Docker`.
+To run the pipeline, you need to have `Nextflow` and either `conda`, `Docker` or `Singularity`.
 
 <details><summary><strong>Click!</strong> If you want to install <code>Nextflow</code> directly, you can use the following one-liner. </summary>
 
@@ -85,6 +86,15 @@ With a `Docker`, please run:
 ```bash
 nextflow run rki-mf1/VirusWarn-Flu -r <version> \
      -profile docker,local \
+     --fasta 'test/openflu_h1n1.fasta' \
+     --metadata 'test/metadata_h1n1.xlsx'
+```
+
+With a `Singularity`, please run:
+
+```bash
+nextflow run rki-mf1/VirusWarn-Flu -r <version> \
+     -profile singularity,local \
      --fasta 'test/openflu_h1n1.fasta' \
      --metadata 'test/metadata_h1n1.xlsx'
 ```

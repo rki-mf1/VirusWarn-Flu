@@ -13,7 +13,7 @@ Set valid_params = ['cores', 'max_cores', 'memory', 'help',
                     'qc', 'split', 'strict', 'season',
                     'output', 'split_dir', 'qc_dir', 'nextclade_dir', 
                     'annot_dir', 'report_dir', 'runinfo_dir',
-                    'publish_dir_mode', 'conda_cache_dir',
+                    'publish_dir_mode', 'conda_cache_dir',  'singularity_cache_dir',
                     'cloudProcess', 'cloud-process']
 
 def parameter_diff = params.keySet() - valid_params
@@ -248,6 +248,7 @@ def helpMSG() {
         conda
         mamba
         docker
+        singularity
     """
 }
 
