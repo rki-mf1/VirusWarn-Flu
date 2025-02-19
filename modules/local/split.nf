@@ -1,5 +1,5 @@
 process SPLIT {
-    label 'split'
+    label 'biopython'
 
     publishDir "${params.output}/${params.split_dir}", mode: params.publish_dir_mode
 

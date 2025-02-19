@@ -1,8 +1,7 @@
-name: annotation
+name: biopython
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
   - python=3.9.7
   - biopython=1.79

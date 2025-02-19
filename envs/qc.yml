@@ -2,7 +2,7 @@ name: qc
 channels:
   - conda-forge
   - bioconda
-  - defaults
+  - r
 dependencies:
   - python=3.9.7
   - pandas=1.5.3

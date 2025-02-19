@@ -13,7 +13,7 @@ Set valid_params = ['cores', 'max_cores', 'memory', 'help',
                     'qc', 'split', 'strict', 'season',
                     'output', 'split_dir', 'qc_dir', 'nextclade_dir', 
                     'annot_dir', 'report_dir', 'runinfo_dir',
-                    'publish_dir_mode', 'conda_cache_dir',
+                    'publish_dir_mode', 'conda_cache_dir',  'singularity_cache_dir',
                     'cloudProcess', 'cloud-process']
 
 def parameter_diff = params.keySet() - valid_params
@@ -55,18 +55,22 @@ workflow VIRUSWARN_FLU {
             log.info"INFO: VirusWarn-Flu is running for Influenza A(H1N1)pdm09"
             log.info"INFO: VirusWarn-Flu is using fixed mutations for season $params.season"
 
-            if (params.season == '19/20' || 
+            if (
+                params.season == '19/20' || 
                 params.season == '20/21' || 
                 params.season == '21/22' || 
                 params.season == '22/23' || 
-                params.season == '23/24') {
+                params.season == '23/24'
+            ) {
                 fixed_table = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2019-2024_Wisconsin.csv", checkIfExists: true) )
-            } else if (params.season == '09/10' || 
+            } else if (
+                params.season == '09/10' || 
                 params.season == '10/11' || 
                 params.season == '11/12' || 
                 params.season == '12/13' || 
                 params.season == '13/14' || 
-                params.season == '14/15') {
+                params.season == '14/15'
+            ) {
                 fixed_table = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2009-2015_California.csv", checkIfExists: true) )
             } else {
                 exit 1,
@@ -79,9 +83,11 @@ workflow VIRUSWARN_FLU {
             log.info"INFO: VirusWarn-Flu is running for Influenza A(H3N2)"
             log.info"INFO: VirusWarn-Flu is using fixed mutations for season $params.season"
 
-            if (params.season ==  '21/22' || 
+            if (
+                params.season ==  '21/22' || 
                 params.season ==  '22/23' || 
-                params.season ==  '23/24') {
+                params.season ==  '23/24'
+            ) {
                 fixed_table = Channel.fromPath( file("data/A(H3N2)/fixed_2021-2024_Darwin.csv", checkIfExists: true) )
             } else {
                 exit 1,
@@ -94,9 +100,11 @@ workflow VIRUSWARN_FLU {
             log.info"INFO: VirusWarn-Flu is running for Influenza B(Victoria)"
             log.info"INFO: VirusWarn-Flu is using fixed mutations for season $params.season"
 
-            if (params.season ==  '21/22' || 
+            if (
+                params.season ==  '21/22' || 
                 params.season ==  '22/23' || 
-                params.season ==  '23/24') {
+                params.season ==  '23/24'
+            ) {
                 fixed_table = Channel.fromPath( file("data/B(Victoria)/fixed_2021-2024_Brisbane.csv", checkIfExists: true) )
             } else {
                 exit 1,
@@ -112,19 +120,23 @@ workflow VIRUSWARN_FLU {
 
         FLU_SUB ( input_fasta, moc_table, roi_table, fixed_table, rmd, qc_rmd, metadata )
 
-    } else if (params.split == 'FluPipe' || 
-                params.split == 'flupipe' || 
-                params.split == 'GISAID' || 
-                params.split == 'gisaid' || 
-                params.split == 'OpenFlu' || 
-                params.split == 'openflu') {
+    } else if (
+        params.split == 'FluPipe' || 
+        params.split == 'flupipe' || 
+        params.split == 'GISAID' || 
+        params.split == 'gisaid' || 
+        params.split == 'OpenFlu' || 
+        params.split == 'openflu'
+    ) {
         log.info"INFO: VirusWarn-Flu is running in SPLIT mode $params.split"
         log.info"INFO: Seperate reports for all subtypes in the dataset are generated"
         log.info"INFO: VirusWarn-Flu is using fixed mutations for season $params.season"
 
-        if (params.season ==  '21/22' || 
+        if (
+            params.season ==  '21/22' || 
             params.season ==  '22/23' || 
-            params.season ==  '23/24') {
+            params.season ==  '23/24'
+        ) {
             fixed_table_h1n1 = Channel.fromPath( file("data/A(H1N1)pdm09/fixed_2019-2024_Wisconsin.csv", checkIfExists: true) )
             fixed_table_h3n2 = Channel.fromPath( file("data/A(H3N2)/fixed_2021-2024_Darwin.csv", checkIfExists: true) )
             fixed_table_vic = Channel.fromPath( file("data/B(Victoria)/fixed_2021-2024_Brisbane.csv", checkIfExists: true) )
@@ -178,7 +190,7 @@ def helpMSG() {
     Workflow: VirusWarn-Flu
 
     ${c_yellow}Usage examples:${c_reset}
-    nextflow run main.nf -profile conda,local --fasta 'test/openflu_h1n1.fasta' --metadata 'test/metadata_h1n1.xlsx'
+    nextflow run rki-mf1/VirusWarn-Flu -r <version> -profile conda,local --fasta 'test/openflu_h1n1.fasta' --metadata 'test/metadata_h1n1.xlsx'
 
     ${c_yellow}Input options:${c_reset}
     ${c_green} --fasta ${c_reset}           REQUIRED! Path to the input fasta file.
@@ -235,6 +247,8 @@ def helpMSG() {
     ${c_blue}Engines${c_reset} (choose one):
         conda
         mamba
+        docker
+        singularity
     """
 }
 
