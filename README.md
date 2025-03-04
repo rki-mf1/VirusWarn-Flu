@@ -72,6 +72,8 @@ nextflow run rki-mf1/VirusWarn-Flu -r <version> --help
 
 ## Running VirusWarn-Flu
 
+Once nextflow, is installed you are good to go! VirusWarn-Flu is run with only one command, using either conda (or mamba), Docker or Singularity. 
+
 With a `conda`, please run:
 
 ```bash
