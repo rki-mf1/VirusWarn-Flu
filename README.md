@@ -21,6 +21,10 @@ VirusWarn-Flu is part of *VirusWarn*
 
 <a href="https://rki-mf1.github.io/viruswarn-doc/"><strong>Explore »</strong></a>
 
+Check out the Video Tutorial
+
+<a href="https://youtu.be/lRM3iPjGZNs"><strong>Take a look »</strong></a>
+
 
 # Getting Started
 
